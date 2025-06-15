@@ -1,0 +1,4 @@
+## Contributing Guidelines
+
+Before submitting a pull request, please run `deno task ok`. This task checks
+formatting, runs the linter and runs tests.

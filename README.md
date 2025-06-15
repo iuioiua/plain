@@ -1,2 +1,3 @@
 # plain
-Simple tools for creating web apps.
+
+Plain, boring utilities for creating web apps.
