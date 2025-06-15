@@ -27,8 +27,6 @@ const routes = [
 ];
 
 export default {
-  async fetch(request) {
-    return await route(routes, request);
-  },
-} satisfies Deno.ServeDefaultExport;
+  fetch: (request: Request) => route(routes, request),
+};
 ```

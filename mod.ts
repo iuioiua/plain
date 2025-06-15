@@ -3,7 +3,7 @@ import { type ErrorStatus, STATUS_TEXT } from "@std/http/status";
 export interface Route {
   pattern: URLPattern;
   method: Request["method"];
-  handler: Deno.ServeHandler;
+  handler: (request: Request) => Response | Promise<Response>;
 }
 
 export class HttpError extends Error {
@@ -23,15 +23,14 @@ export class HttpError extends Error {
 export async function route(
   routes: Route[],
   request: Request,
-  info: Deno.ServeHandlerInfo,
 ): Promise<Response> {
   const found = routes.find((route) => route.pattern.test(request.url));
-  if (!found) throw new HttpError(404, undefined, { cause: { request, info } });
+  if (!found) throw new HttpError(404, undefined, { cause: request });
   if (request.method !== found.method) {
-    throw new HttpError(405, undefined, { cause: { request, info } });
+    throw new HttpError(405, undefined, { cause: request });
   }
   try {
-    return await found.handler(request, info);
+    return await found.handler(request);
   } catch (error) {
     if (error instanceof HttpError) throw error;
     throw new HttpError(500, undefined, { cause: error });

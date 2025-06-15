@@ -53,13 +53,12 @@ Deno.test("route", async (t) => {
       },
     },
   ];
-  const info = {} as Deno.ServeHandlerInfo;
 
   await t.step(
     "should return the correct response for a static route",
     async () => {
       const request = new Request("http://localhost/test");
-      const response = await route(routes, request, info);
+      const response = await route(routes, request);
       assertInstanceOf(response, Response);
       assertEquals(response.status, 200);
       assertEquals(await response.text(), "I'm a static route");
@@ -72,7 +71,7 @@ Deno.test("route", async (t) => {
       const request = new Request("http://localhost/foo/123", {
         method: "POST",
       });
-      const response = await route(routes, request, info);
+      const response = await route(routes, request);
       assertInstanceOf(response, Response);
       assertEquals(response.status, 200);
       assertEquals(await response.text(), "I'm a dynamic route");
@@ -84,12 +83,12 @@ Deno.test("route", async (t) => {
     async () => {
       const request = new Request("http://localhost/nonexistent");
       const error = await assertRejects(
-        () => route(routes, request, info),
+        () => route(routes, request),
         HttpError,
         "Not Found",
       );
       assertEquals(error.status, 404);
-      assertEquals(error.cause, { request, info });
+      assertEquals(error.cause, request);
     },
   );
 
@@ -98,12 +97,12 @@ Deno.test("route", async (t) => {
     async () => {
       const request = new Request("http://localhost/test", { method: "POST" });
       const error = await assertRejects(
-        () => route(routes, request, info),
+        () => route(routes, request),
         HttpError,
         "Method Not Allowed",
       );
       assertEquals(error.status, 405);
-      assertEquals(error.cause, { request, info });
+      assertEquals(error.cause, request);
     },
   );
 
@@ -112,7 +111,7 @@ Deno.test("route", async (t) => {
     async () => {
       const request = new Request("http://localhost/throws");
       const error = await assertRejects(
-        () => route(routes, request, info),
+        () => route(routes, request),
         HttpError,
         "I'm a 404 message",
       );
@@ -127,7 +126,7 @@ Deno.test("route", async (t) => {
     async () => {
       const request = new Request("http://localhost/error", { method: "PUT" });
       const error = await assertRejects(
-        () => route(routes, request, info),
+        () => route(routes, request),
         HttpError,
         "Internal Server Error",
       );
