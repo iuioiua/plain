@@ -3,13 +3,11 @@
 Plain, boring utilities for creating web apps.
 
 ```ts
-import { html, HttpError, route } from "@iuioiua/plain";
+import { createHandler, html, HttpError, type Routes } from "@iuioiua/plain";
 
-const routes = [
-  {
-    method: "GET",
-    pattern: new URLPattern({ pathname: "/" }),
-    handler: () =>
+const routes: Routes = {
+  "/": {
+    "GET": () =>
       new Response(
         html`
           <h1>Hello, world!</h1>
@@ -17,16 +15,15 @@ const routes = [
         { headers: { "Content-Type": "text/html" } },
       ),
   },
-  {
-    method: "GET",
-    pattern: new URLPattern({ pathname: "/unauthorized" }),
-    handler: () => {
+  "/unauthorized": {
+    "GET": () => {
       throw new HttpError(401);
     },
   },
-];
+};
+const handler = createHandler(routes);
 
 export default {
-  fetch: (request: Request) => route(routes, request),
+  fetch: handler,
 };
 ```
