@@ -1,42 +1,20 @@
 import { createHandler, type Routes } from "@iuioiua/plain";
 
 const routes: Routes = {
-  "/user": {
-    GET: () => new Response("User route"),
-  },
-  "/user/comments": {
-    GET: () => new Response("User comments"),
-  },
-  "/user/avatar": {
-    GET: () => new Response("User avatar"),
-  },
-  "/user/lookup/username/:username": {
-    GET: () => new Response("User lookup by username"),
-  },
-  "/user/lookup/email/:address": {
-    GET: () => new Response("User lookup by email"),
-  },
-  "/event/:id": {
-    GET: () => new Response("Event details"),
-  },
-  "/event/:id/comments": {
-    GET: () => new Response("Event comments"),
-  },
-  "/event/:id/comment": {
-    POST: () => new Response("Post event comment"),
-  },
-  "/map/:location/events": {
-    GET: () => new Response("Events at location"),
-  },
-  "/status": {
-    GET: () => new Response("Status OK"),
-  },
-  "/very/deeply/nested/route/hello/there": {
-    GET: () => new Response("Hello from nested route"),
-  },
-  "/static/*": {
-    GET: () => new Response("Static file response"),
-  },
+  "GET /user": () => new Response("User route"),
+  "GET /user/comments": () => new Response("User comments"),
+  "GET /user/avatar": () => new Response("User avatar"),
+  "GET /user/lookup/username/:username": () =>
+    new Response("User lookup by username"),
+  "GET /user/lookup/email/:address": () => new Response("User lookup by email"),
+  "GET /event/:id": () => new Response("Event details"),
+  "GET /event/:id/comments": () => new Response("Event comments"),
+  "POST /event/:id/comment": () => new Response("Post event comment"),
+  "GET /map/:location/events": () => new Response("Events at location"),
+  "GET /status": () => new Response("Status OK"),
+  "GET /very/deeply/nested/route/hello/there": () =>
+    new Response("Hello from nested route"),
+  "GET /static/*": () => new Response("Static file response"),
 };
 const handler = createHandler(routes);
 

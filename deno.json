@@ -1,10 +1,10 @@
 {
   "name": "@iuioiua/plain",
-  "version": "0.0.1-alpha.2",
+  "version": "0.0.1-alpha.3",
   "exports": "./mod.ts",
   "imports": {
     "@std/assert": "jsr:@std/assert@^1.0.13",
-    "@std/http": "jsr:@std/http@^1.0.18"
+    "@std/http": "jsr:@std/http@^1.0.20"
   },
   "tasks": {
     "fmt": "deno fmt --check",

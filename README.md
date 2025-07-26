@@ -6,19 +6,15 @@ Plain, boring utilities for creating web apps.
 import { createHandler, html, HttpError, type Routes } from "@iuioiua/plain";
 
 const routes: Routes = {
-  "/": {
-    "GET": () =>
-      new Response(
-        html`
-          <h1>Hello, world!</h1>
-        `,
-        { headers: { "Content-Type": "text/html" } },
-      ),
-  },
-  "/unauthorized": {
-    "GET": () => {
-      throw new HttpError(401);
-    },
+  "GET /": () =>
+    new Response(
+      html`
+        <h1>Hello, world!</h1>
+      `,
+      { headers: { "Content-Type": "text/html" } },
+    ),
+  "POST /unauthorized": () => {
+    throw new HttpError(401);
   },
 };
 const handler = createHandler(routes);

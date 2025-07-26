@@ -1,11 +1,7 @@
 import { type ErrorStatus, STATUS_TEXT } from "@std/http/status";
 
 export type Handler = (request: Request) => Response | Promise<Response>;
-export interface Routes {
-  [path: string]: {
-    [method: string]: Handler;
-  };
-}
+export type Routes = Record<string, Handler>;
 
 export class HttpError extends Error {
   status: ErrorStatus;
@@ -22,25 +18,18 @@ export class HttpError extends Error {
 }
 
 export function createHandler(routes: Routes): Handler {
-  const internalRoutes: [URLPattern, Map<string, Handler>][] = Object.entries(
-    routes,
-  ).map(([pathname, methods]) => [
-    new URLPattern({ pathname }),
-    new Map(Object.entries(methods)),
-  ]);
-
+  const routeMap = Object.entries(routes).map(([methodPath, handler]) => {
+    const [method, pathname] = methodPath.split(" ");
+    const pattern = new URLPattern({ pathname });
+    return { method, pattern, handler };
+  });
   return (request) => {
-    const methodHandlers = internalRoutes.find(([pattern]) =>
-      pattern.test(request.url)
-    );
-    if (!methodHandlers) {
-      throw new HttpError(404, undefined, { cause: request });
-    }
-    const handler = methodHandlers[1].get(request.method);
-    if (!handler) {
+    const route = routeMap.find(({ pattern }) => pattern.test(request.url));
+    if (!route) throw new HttpError(404, undefined, { cause: request });
+    if (route.method !== request.method) {
       throw new HttpError(405, undefined, { cause: request });
     }
-    return handler(request);
+    return route.handler(request);
   };
 }
 

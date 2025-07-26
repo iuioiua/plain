@@ -23,21 +23,13 @@ Deno.test("HttpError - user-defined properties", () => {
 });
 
 const routes: Routes = {
-  "/test": {
-    GET: () => new Response("I'm a static route"),
+  "GET /test": () => new Response("I'm a static route"),
+  "POST /foo/:bar": () => new Response("I'm a dynamic route"),
+  "GET /throws": () => {
+    throw new HttpError(404, "I'm a 404 message", { cause: { foo: "bar" } });
   },
-  "/foo/:bar": {
-    POST: () => new Response("I'm a dynamic route"),
-  },
-  "/throws": {
-    GET: () => {
-      throw new HttpError(404, "I'm a 404 message", { cause: { foo: "bar" } });
-    },
-  },
-  "/error": {
-    PUT: () => {
-      throw new SyntaxError("This is an error");
-    },
+  "PUT /error": () => {
+    throw new SyntaxError("This is an error");
   },
 };
 const handler = createHandler(routes);
