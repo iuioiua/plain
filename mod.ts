@@ -15,6 +15,12 @@ export class HttpError extends Error {
     this.name = this.constructor.name;
     this.status = status;
   }
+
+  toResponse(): Response {
+    return new Response(this.message, {
+      status: this.status,
+    });
+  }
 }
 
 export function createHandler(routes: Routes): Handler {
