@@ -1,22 +1,81 @@
-import { createHandler, type Routes } from "@iuioiua/plain";
+import { type Route, route } from "@iuioiua/plain";
 
-const routes: Routes = {
-  "GET /user": () => new Response("User route"),
-  "GET /user/comments": () => new Response("User comments"),
-  "GET /user/avatar": () => new Response("User avatar"),
-  "GET /user/lookup/username/:username": () =>
-    new Response("User lookup by username"),
-  "GET /user/lookup/email/:address": () => new Response("User lookup by email"),
-  "GET /event/:id": () => new Response("Event details"),
-  "GET /event/:id/comments": () => new Response("Event comments"),
-  "POST /event/:id/comment": () => new Response("Post event comment"),
-  "GET /map/:location/events": () => new Response("Events at location"),
-  "GET /status": () => new Response("Status OK"),
-  "GET /very/deeply/nested/route/hello/there": () =>
-    new Response("Hello from nested route"),
-  "GET /static/*": () => new Response("Static file response"),
-};
-const handler = createHandler(routes);
+const routes: Route[] = [
+  {
+    pattern: new URLPattern({ pathname: "/user" }),
+    handlers: {
+      GET: () => new Response("User route"),
+    },
+  },
+  {
+    pattern: new URLPattern({ pathname: "/user/comments" }),
+    handlers: {
+      GET: () => new Response("User comments"),
+    },
+  },
+  {
+    pattern: new URLPattern({ pathname: "/user/avatar" }),
+    handlers: {
+      GET: () => new Response("User avatar"),
+    },
+  },
+  {
+    pattern: new URLPattern({ pathname: "/user/lookup/username/:username" }),
+    handlers: {
+      GET: () => new Response("User lookup by username"),
+    },
+  },
+  {
+    pattern: new URLPattern({ pathname: "/user/lookup/email/:address" }),
+    handlers: {
+      GET: () => new Response("User lookup by email"),
+    },
+  },
+  {
+    pattern: new URLPattern({ pathname: "/event/:id" }),
+    handlers: {
+      GET: () => new Response("Event details"),
+    },
+  },
+  {
+    pattern: new URLPattern({ pathname: "/event/:id/comments" }),
+    handlers: {
+      GET: () => new Response("Event comments"),
+    },
+  },
+  {
+    pattern: new URLPattern({ pathname: "/event/:id/comment" }),
+    handlers: {
+      "POST": () => new Response("Post event comment"),
+    },
+  },
+  {
+    pattern: new URLPattern({ pathname: "/map/:location/events" }),
+    handlers: {
+      GET: () => new Response("Events at location"),
+    },
+  },
+  {
+    pattern: new URLPattern({ pathname: "/status" }),
+    handlers: {
+      GET: () => new Response("Status OK"),
+    },
+  },
+  {
+    pattern: new URLPattern({
+      pathname: "/very/deeply/nested/route/hello/there",
+    }),
+    handlers: {
+      GET: () => new Response("Hello from nested route"),
+    },
+  },
+  {
+    pattern: new URLPattern({ pathname: "/static/*" }),
+    handlers: {
+      GET: () => new Response("Static file response"),
+    },
+  },
+];
 
 [
   {
@@ -57,6 +116,6 @@ const handler = createHandler(routes);
 ].forEach(({ name, method, path }) => {
   Deno.bench(name, () => {
     const request = new Request(`http://localhost${path}`, { method });
-    handler(request);
+    route(routes, request);
   });
 });

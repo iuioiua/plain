@@ -2,24 +2,32 @@
 
 Plain, boring utilities for creating web apps.
 
-```ts
-import { createHandler, html, HttpError, type Routes } from "@iuioiua/plain";
+```ts ignore
+import { html, HttpError, type Route, route } from "@iuioiua/plain";
 
-const routes: Routes = {
-  "GET /": () =>
-    new Response(
-      html`
-        <h1>Hello, world!</h1>
-      `,
-      { headers: { "Content-Type": "text/html" } },
-    ),
-  "POST /unauthorized": () => {
-    throw new HttpError(401);
+const routes: Route[] = [
+  {
+    pattern: new URLPattern({ pathname: "/" }),
+    handlers: {
+      GET() {
+        return new Response(
+          html`
+            <h1>Hello, world!</h1>
+          `,
+          { headers: { "Content-Type": "text/html" } },
+        );
+      },
+    },
   },
-};
-const handler = createHandler(routes);
+  {
+    pattern: new URLPattern({ pathname: "/me" }),
+    handlers: {
+      POST() {
+        throw new HttpError(401);
+      },
+    },
+  },
+];
 
-export default {
-  fetch: handler,
-};
+Deno.serve((request) => route(routes, request));
 ```

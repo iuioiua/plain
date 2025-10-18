@@ -1,4 +1,4 @@
-import { createHandler, html, HttpError, type Routes } from "@iuioiua/plain";
+import { html, HttpError, type Route, route } from "@iuioiua/plain";
 import { assertEquals } from "@std/assert/equals";
 import { assertInstanceOf } from "@std/assert/instance-of";
 import { assertThrows } from "@std/assert/throws";
@@ -22,21 +22,43 @@ Deno.test("HttpError - user-defined properties", () => {
   assertEquals(error.cause?.foo, "bar");
 });
 
-const routes: Routes = {
-  "GET /test": () => new Response("I'm a static route"),
-  "POST /foo/:bar": () => new Response("I'm a dynamic route"),
-  "GET /throws": () => {
-    throw new HttpError(404, "I'm a 404 message", { cause: { foo: "bar" } });
+const routes: Route[] = [
+  {
+    pattern: new URLPattern({ pathname: "/test" }),
+    handlers: {
+      GET: () => new Response("I'm a static route"),
+    },
   },
-  "PUT /error": () => {
-    throw new SyntaxError("This is an error");
+  {
+    pattern: new URLPattern({ pathname: "/foo/:bar" }),
+    handlers: {
+      GET: () => new Response("I'm a dynamic route"),
+      POST: () => new Response("I'm a dynamic route: POST"),
+    },
   },
-};
-const handler = createHandler(routes);
+  {
+    pattern: new URLPattern({ pathname: "/throws" }),
+    handlers: {
+      GET: () => {
+        throw new HttpError(404, "I'm a 404 message", {
+          cause: { foo: "bar" },
+        });
+      },
+    },
+  },
+  {
+    pattern: new URLPattern({ pathname: "/error" }),
+    handlers: {
+      PUT: () => {
+        throw new SyntaxError("This is an error");
+      },
+    },
+  },
+];
 
 Deno.test("route() - static route", async () => {
   const request = new Request("http://localhost/test");
-  const response = handler(request);
+  const response = route(routes, request);
   assertInstanceOf(response, Response);
   assertEquals(response.status, 200);
   assertEquals(await response.text(), "I'm a static route");
@@ -44,16 +66,16 @@ Deno.test("route() - static route", async () => {
 
 Deno.test("route() - dynamic route", async () => {
   const request = new Request("http://localhost/foo/123", { method: "POST" });
-  const response = handler(request);
+  const response = route(routes, request);
   assertInstanceOf(response, Response);
   assertEquals(response.status, 200);
-  assertEquals(await response.text(), "I'm a dynamic route");
+  assertEquals(await response.text(), "I'm a dynamic route: POST");
 });
 
 Deno.test("route() - non-matching URL", () => {
   const request = new Request("http://localhost/nonexistent");
   const error = assertThrows(
-    () => handler(request),
+    () => route(routes, request),
     HttpError,
     "Not Found",
   );
@@ -64,7 +86,7 @@ Deno.test("route() - non-matching URL", () => {
 Deno.test("route() - non-matching method", () => {
   const request = new Request("http://localhost/test", { method: "POST" });
   const error = assertThrows(
-    () => handler(request),
+    () => route(routes, request),
     HttpError,
     "Method Not Allowed",
   );
@@ -75,7 +97,7 @@ Deno.test("route() - non-matching method", () => {
 Deno.test("route() - handler throws HttpError", () => {
   const request = new Request("http://localhost/throws");
   const error = assertThrows(
-    () => handler(request),
+    () => route(routes, request),
     HttpError,
     "I'm a 404 message",
   );
