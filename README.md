@@ -1,6 +1,6 @@
 # plain
 
-Plain, boring utilities for creating web apps.
+Plain, boring, framework-less utilities for creating web apps.
 
 ```ts ignore
 import { html, HttpError, type Route, route } from "@iuioiua/plain";
