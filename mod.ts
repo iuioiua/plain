@@ -1,5 +1,7 @@
-import { type ErrorStatus, STATUS_TEXT } from "@std/http/status";
+import { type ErrorStatus, isStatus, STATUS_TEXT } from "@std/http/status";
 import type { Method } from "@std/http/unstable-method";
+
+export { isStatus };
 
 export type Handler = (request: Request) => Response | Promise<Response>;
 export interface Route {
