@@ -1,7 +1,11 @@
-import { html, HttpError, type Route, route } from "@iuioiua/plain";
-import { assertEquals } from "@std/assert/equals";
-import { assertInstanceOf } from "@std/assert/instance-of";
-import { assertThrows } from "@std/assert/throws";
+import { html, HttpError, type Route, route, serveFile } from "@iuioiua/plain";
+import {
+  assertEquals,
+  assertInstanceOf,
+  assertRejects,
+  assertThrows,
+} from "@std/assert";
+import { eTag } from "@std/http/etag";
 
 Deno.test("HttpError - defaults", () => {
   const error = new HttpError(500);
@@ -118,4 +122,97 @@ Deno.test("html()", () => {
     <span style="color: red;">blue</span>
   `,
   );
+});
+
+Deno.test("serveFile() - GET request", async () => {
+  const filePath = "./README.md";
+  const content = await Deno.readTextFile(filePath);
+  const fileInfo = await Deno.stat(filePath);
+  const response = await serveFile(
+    new Request("http://localhost/README.md"),
+    filePath,
+  );
+  assertEquals(response.status, 200);
+  assertEquals(await response.text(), content);
+  assertEquals(response.headers.get("accept-ranges"), "none");
+  assertEquals(response.headers.get("content-length"), `${content.length}`);
+  assertEquals(
+    response.headers.get("content-type"),
+    "text/markdown; charset=UTF-8",
+  );
+  assertEquals(
+    response.headers.get("etag"),
+    await eTag(await Deno.stat("./README.md")),
+  );
+  assertEquals(
+    response.headers.get("last-modified"),
+    fileInfo.mtime!.toUTCString(),
+  );
+});
+
+Deno.test("serveFile() - HEAD request", async () => {
+  const filePath = "./README.md";
+  const content = await Deno.readTextFile(filePath);
+  const fileInfo = await Deno.stat(filePath);
+  const response = await serveFile(
+    new Request("http://localhost/README.md", { method: "HEAD" }),
+    filePath,
+  );
+  assertEquals(response.status, 200);
+  assertEquals(response.body, null);
+  assertEquals(response.headers.get("accept-ranges"), "none");
+  assertEquals(response.headers.get("content-length"), `${content.length}`);
+  assertEquals(
+    response.headers.get("content-type"),
+    "text/markdown; charset=UTF-8",
+  );
+  assertEquals(response.headers.get("etag"), await eTag(fileInfo));
+  assertEquals(
+    response.headers.get("last-modified"),
+    fileInfo.mtime!.toUTCString(),
+  );
+});
+
+Deno.test("serveFile() - honors `If-None-Match` request header", async () => {
+  const filePath = "./README.md";
+  const content = await Deno.readTextFile(filePath);
+  const fileInfo = await Deno.stat(filePath);
+  const firstResponse = await serveFile(
+    new Request("http://localhost/README.md"),
+    filePath,
+  );
+  await firstResponse.body?.cancel();
+
+  const etag = firstResponse.headers.get("etag");
+  assertEquals(etag, await eTag(fileInfo));
+
+  const cachedResponse = await serveFile(
+    new Request("http://localhost/README.md", {
+      headers: { "If-None-Match": etag! },
+    }),
+    filePath,
+  );
+  assertEquals(cachedResponse.status, 304);
+  assertEquals(cachedResponse.body, null);
+  assertEquals(cachedResponse.headers.get("etag"), etag);
+  assertEquals(
+    cachedResponse.headers.get("last-modified"),
+    fileInfo.mtime!.toUTCString(),
+  );
+  assertEquals(
+    cachedResponse.headers.get("content-length"),
+    `${content.length}`,
+  );
+});
+
+Deno.test("serveFile() - file not found", async () => {
+  const filePath = "./NON_EXISTENT_FILE.md";
+  const error = await assertRejects(
+    () =>
+      serveFile(new Request("http://localhost/NON_EXISTENT_FILE.md"), filePath),
+    HttpError,
+    "Not Found",
+  );
+  console.error(error);
+  assertEquals(error.status, 404);
 });
