@@ -3,7 +3,10 @@ import type { Method } from "@std/http/unstable-method";
 
 export { isStatus };
 
-export type Handler = (request: Request) => Response | Promise<Response>;
+export type Handler = (
+  request: Request,
+  match: URLPatternResult,
+) => Response | Promise<Response>;
 export interface Route {
   pattern: URLPattern;
   handlers: { [method in Method]?: Handler };
@@ -58,15 +61,14 @@ export function route(
   routes: Route[],
   request: Request,
 ): ReturnType<Handler> {
-  const match = routes.find(({ pattern }) => pattern.test(request.url));
-  if (!match) {
-    throw new HttpError(404, undefined, { cause: request });
+  for (const { pattern, handlers } of routes) {
+    const match = pattern.exec(request.url);
+    if (!match) continue;
+    const handler = handlers[request.method as Method];
+    if (!handler) throw new HttpError(405, undefined, { cause: request });
+    return handler(request, match);
   }
-  const handler = match.handlers[request.method as Method];
-  if (!handler) {
-    throw new HttpError(405, undefined, { cause: request });
-  }
-  return handler(request);
+  throw new HttpError(404, undefined, { cause: request });
 }
 
 export function html(

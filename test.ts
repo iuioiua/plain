@@ -33,7 +33,7 @@ const routes: Route[] = [
     pattern: new URLPattern({ pathname: "/foo/:bar" }),
     handlers: {
       GET: () => new Response("I'm a dynamic route"),
-      POST: () => new Response("I'm a dynamic route: POST"),
+      POST: (_request, match) => new Response(match.pathname.groups.bar),
     },
   },
   {
@@ -69,7 +69,7 @@ Deno.test("route() - dynamic route", async () => {
   const response = route(routes, request);
   assertInstanceOf(response, Response);
   assertEquals(response.status, 200);
-  assertEquals(await response.text(), "I'm a dynamic route: POST");
+  assertEquals(await response.text(), "123");
 });
 
 Deno.test("route() - non-matching URL", () => {
