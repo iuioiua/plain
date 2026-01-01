@@ -1,9 +1,8 @@
 import { extname } from "@std/path/extname";
 import { contentType } from "@std/media-types/content-type";
 import { eTag, ifNoneMatch } from "@std/http/etag";
-import { type ErrorStatus, STATUS_CODE, STATUS_TEXT } from "@std/http/status";
-import { HEADER } from "@std/http/unstable-header";
-import { METHOD, type Method } from "@std/http/unstable-method";
+import { type ErrorStatus, STATUS_TEXT } from "@std/http/status";
+import type { Method } from "@std/http/unstable-method";
 import { normalize } from "@std/path/posix/normalize";
 import { join } from "@std/path/posix/join";
 
@@ -96,10 +95,10 @@ function isNotModified(
 ): boolean {
   if (!etag && !mtime) return false;
 
-  const ifNoneMatchValue = request.headers.get(HEADER.IfNoneMatch);
-  if (!ifNoneMatch(ifNoneMatchValue, etag)) return true;
+  const ifNoneMatchValue = request.headers.get("if-none-match");
+  if (ifNoneMatch(ifNoneMatchValue, etag)) return true;
 
-  const ifModifiedSinceValue = request.headers.get(HEADER.IfModifiedSince);
+  const ifModifiedSinceValue = request.headers.get("if-modified-since");
   return Boolean(
     !ifNoneMatchValue &&
       mtime &&
@@ -112,39 +111,43 @@ export async function serveFile(
   request: Request,
   filePath: string,
 ): Promise<Response> {
-  const isGet = request.method === METHOD.Get;
-  const isHead = request.method === METHOD.Head;
+  const isGet = request.method === "GET";
+  const isHead = request.method === "HEAD";
   if (!isGet && !isHead) throw new HttpError(405);
 
-  const fileInfo = await Deno.stat(filePath);
+  /**
+   * Automatically throws a {@linkcode Deno.errors.NotFound} error if the file
+   * does not exists, which is caught and converted to a 404
+   * {@linkcode HttpError} in {@linkcode toHttpError}.
+   */
+  using file = await Deno.open(filePath);
+  const fileInfo = await file.stat();
   if (!fileInfo.isFile) throw new HttpError(404);
 
   const headers = new Headers({
     // Range requests are not supported
-    [HEADER.AcceptRanges]: "none",
-    [HEADER.ContentLength]: fileInfo.size.toString(),
+    "accept-ranges": "none",
+    "content-length": fileInfo.size.toString(),
   });
 
   const lastModified = fileInfo.mtime?.toUTCString();
-  if (lastModified) headers.set(HEADER.LastModified, lastModified);
+  if (lastModified) headers.set("last-modified", lastModified);
 
   const etag = await eTag(fileInfo);
-  if (etag) headers.set(HEADER.ETag, etag);
+  if (etag) headers.set("etag", etag);
 
   const contentTypeValue = contentType(extname(filePath));
-  if (contentTypeValue) headers.set(HEADER.ContentType, contentTypeValue);
+  if (contentTypeValue) headers.set("content-type", contentTypeValue);
 
   if (isNotModified(request, fileInfo.mtime, etag)) {
     return new Response(null, {
-      status: STATUS_CODE.NotModified,
+      status: 304,
       headers,
     });
   }
 
-  if (isHead) return new Response(null, { headers });
-
-  const file = await Deno.open(filePath);
-  return new Response(file.readable, { headers });
+  const body = isHead ? null : file.readable;
+  return new Response(body, { headers });
 }
 
 /**
@@ -157,8 +160,8 @@ export function serveDir(
   request: Request,
   rootFilePath = ".",
 ): Response | Promise<Response> {
-  const isGet = request.method === METHOD.Get;
-  const isHead = request.method === METHOD.Head;
+  const isGet = request.method === "GET";
+  const isHead = request.method === "HEAD";
   if (!isGet && !isHead) throw new HttpError(405);
 
   const url = new URL(request.url);
