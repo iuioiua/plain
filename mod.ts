@@ -24,11 +24,13 @@ export class HttpError extends Error {
   }
 }
 
-function toHttpErrorCode(error: Error): ErrorStatus {
+function toHttpErrorCode(error: unknown): ErrorStatus {
   if (
-    error instanceof SyntaxError || error instanceof TypeError ||
-    error instanceof RangeError || error instanceof URIError ||
-    error instanceof EvalError || error instanceof Deno.errors.AddrNotAvailable
+    error instanceof SyntaxError ||
+    error instanceof RangeError ||
+    error instanceof URIError ||
+    error instanceof EvalError ||
+    error instanceof Deno.errors.AddrNotAvailable
   ) return 400;
   if (error instanceof Deno.errors.PermissionDenied) return 403;
   if (error instanceof Deno.errors.NotFound) return 404;
@@ -45,10 +47,14 @@ function toHttpErrorCode(error: Error): ErrorStatus {
   return 500;
 }
 
-export function toHttpError(error: Error): HttpError {
+export function toHttpError(error: unknown): HttpError {
   if (error instanceof HttpError) return error;
   const status = toHttpErrorCode(error);
-  return new HttpError(status, error.message, { cause: error });
+  return new HttpError(
+    status,
+    error instanceof Error ? error.message : undefined,
+    { cause: error },
+  );
 }
 
 export function route(
