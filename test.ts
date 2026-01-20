@@ -145,7 +145,7 @@ Deno.test("toHttpError()", async (t) => {
   });
 
   await t.step("converts `TypeError`", () => {
-    testToHttpError(TypeError, 400);
+    testToHttpError(TypeError, 500);
   });
 
   await t.step("converts `RangeError`", () => {
