@@ -223,6 +223,13 @@ Deno.test("toHttpError()", async (t) => {
     const resultError = toHttpError(error);
     assertEquals(resultError, error);
   });
+
+  await t.step("converts non-error", () => {
+    const nonError = crypto.randomUUID();
+    const resultError = toHttpError(nonError);
+    assertEquals(resultError.status, 500);
+    assertEquals(resultError.message, "Internal Server Error");
+  });
 });
 
 Deno.test("html()", () => {
