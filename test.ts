@@ -18,16 +18,25 @@ Deno.test("HttpError", async (t) => {
     assertEquals(error.status, 500);
     assertEquals(error.message, "Internal Server Error");
     assertEquals(error.cause, undefined);
+    assertEquals(error.init, undefined);
   });
 
   await t.step("user-defined properties", () => {
-    const error = new HttpError(404, "Not Found", { cause: { foo: "bar" } });
+    const error = new HttpError(404, "Not Found", {
+      cause: { foo: "bar" },
+      init: { headers: { "WWW-Authenticate": 'Basic realm="Secure Area"' } },
+    });
     assertInstanceOf(error, Error);
     assertEquals(error.name, "HttpError");
     assertEquals(error.status, 404);
     assertEquals(error.message, "Not Found");
     // @ts-ignore It's fine
     assertEquals(error.cause?.foo, "bar");
+    assertEquals(
+      // @ts-ignore It's fine
+      error.init?.headers?.["WWW-Authenticate"],
+      'Basic realm="Secure Area"',
+    );
   });
 });
 

@@ -10,17 +10,23 @@ export interface Route {
   handlers: { [method in Method]?: Handler };
 }
 
+export interface HttpErrorOptions extends ErrorOptions {
+  init?: ResponseInit;
+}
+
 export class HttpError extends Error {
   status: ErrorStatus;
+  init?: ResponseInit;
 
   constructor(
     status: ErrorStatus,
     message: string = STATUS_TEXT[status],
-    options?: ErrorOptions,
+    options?: HttpErrorOptions,
   ) {
     super(message, options);
     this.name = this.constructor.name;
     this.status = status;
+    this.init = options?.init;
   }
 }
 
