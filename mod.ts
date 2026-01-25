@@ -1,4 +1,9 @@
-import { type ErrorStatus, STATUS_TEXT } from "@std/http/status";
+import {
+  type ErrorStatus,
+  type InformationalStatus,
+  type RedirectStatus,
+  STATUS_TEXT,
+} from "@std/http/status";
 import type { Method } from "@std/http/unstable-method";
 
 export type Handler = (
@@ -15,11 +20,11 @@ export interface HttpErrorOptions extends ErrorOptions {
 }
 
 export class HttpError extends Error {
-  status: ErrorStatus;
+  status: InformationalStatus | RedirectStatus | ErrorStatus;
   init?: ResponseInit;
 
   constructor(
-    status: ErrorStatus,
+    status: InformationalStatus | RedirectStatus | ErrorStatus,
     message: string = STATUS_TEXT[status],
     options?: HttpErrorOptions,
   ) {
