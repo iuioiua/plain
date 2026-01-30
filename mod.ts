@@ -50,6 +50,10 @@ export interface HttpErrorOptions extends ErrorOptions {
  * It's commonly used in route handlers to signal HTTP errors that should be
  * returned to the client.
  *
+ * @param status - The HTTP status code (e.g., 404, 500, 403)
+ * @param message - Optional error message. Defaults to the standard status text for the given status code
+ * @param options - Optional error options including cause and response init configuration
+ *
  * @example
  * ```ts
  * // Throw a 404 error
@@ -170,9 +174,13 @@ export function route(
 /**
  * A template literal tag function for creating HTML strings with interpolated values.
  *
- * This function processes template literals and safely interpolates values into the
- * HTML string. It concatenates the template strings with the interpolated values,
- * treating `undefined` values as empty strings.
+ * This function processes template literals and concatenates them with interpolated values.
+ * Values are inserted as-is without any HTML escaping or sanitization. Undefined values
+ * are treated as empty strings.
+ *
+ * **Security Warning**: This function does NOT escape HTML. When interpolating user-provided
+ * data, you must manually escape it to prevent XSS (Cross-Site Scripting) attacks. Only use
+ * this function with trusted data or data that has been properly sanitized.
  *
  * @param strings - The template string array containing the static parts of the template
  * @param values - The values to be interpolated into the template
@@ -194,6 +202,26 @@ export function route(
  * //   <h1>Hello, Alice!</h1>
  * //   <p style="color: blue;">Welcome to our site.</p>
  * // </div>
+ * ```
+ *
+ * @example
+ * ```ts
+ * // WARNING: This is vulnerable to XSS attacks!
+ * const userInput = '<script>alert("XSS")</script>';
+ * const unsafeHtml = html`<div>${userInput}</div>`;
+ * // Result contains: <div><script>alert("XSS")</script></div>
+ *
+ * // Instead, escape user input before using it:
+ * function escapeHtml(str: string): string {
+ *   return str
+ *     .replace(/&/g, "&amp;")
+ *     .replace(/</g, "&lt;")
+ *     .replace(/>/g, "&gt;")
+ *     .replace(/"/g, "&quot;")
+ *     .replace(/'/g, "&#039;");
+ * }
+ * const safeHtml = html`<div>${escapeHtml(userInput)}</div>`;
+ * // Result contains: <div>&lt;script&gt;alert("XSS")&lt;/script&gt;</div>
  * ```
  */
 export function html(
