@@ -19,6 +19,8 @@ export type Handler = (
  *
  * @example
  * ```ts
+ * import type { Route } from "@iuioiua/plain";
+ *
  * const routes: Route[] = [
  *   {
  *     pattern: new URLPattern({ pathname: "/users/:id" }),
@@ -55,7 +57,9 @@ export interface HttpErrorOptions extends ErrorOptions {
  * @param options - Optional error options including cause and response init configuration
  *
  * @example
- * ```ts
+ * ```ts ignore
+ * import { HttpError } from "@iuioiua/plain";
+ *
  * // Throw a 404 error
  * throw new HttpError(404);
  *
@@ -133,7 +137,9 @@ export function toHttpError(error: unknown): HttpError {
  * if the route matches but the HTTP method is not supported
  *
  * @example
- * ```ts
+ * ```ts ignore
+ * import { route, HttpError } from "@iuioiua/plain";
+ *
  * const routes: Route[] = [
  *   {
  *     pattern: new URLPattern({ pathname: "/" }),
@@ -188,6 +194,8 @@ export function route(
  *
  * @example
  * ```ts
+ * import { html } from "@iuioiua/plain";
+ *
  * const name = "Alice";
  * const color = "blue";
  * const htmlContent = html`
@@ -206,6 +214,8 @@ export function route(
  *
  * @example
  * ```ts
+ * import { html } from "@iuioiua/plain";
+ *
  * // WARNING: This is vulnerable to XSS attacks!
  * const userInput = '<script>alert("XSS")</script>';
  * const unsafeHtml = html`<div>${userInput}</div>`;
