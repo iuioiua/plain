@@ -99,7 +99,7 @@ export class HttpError extends Error {
  *
  * @param routes - An array of route definitions to match against
  * @param request - The incoming HTTP request to route
- * @returns The response from the matched handler, or a Promise that resolves to a response
+ * @returns A Promise that resolves to the response from the matched handler
  * @throws {HttpError} Throws a 404 error if no matching route is found, or a 405 error
  * if the route matches but the HTTP method is not supported
  *
@@ -128,20 +128,20 @@ export class HttpError extends Error {
  * Deno.serve((request) => route(routes, request));
  * ```
  */
-export function route(
+export async function route(
   routes: Route[],
   request: Request,
-): ReturnType<Handler> {
+): Promise<Response> {
   for (const { pattern, handlers } of routes) {
     const match = pattern.exec(request.url);
     if (!match) continue;
 
     const handler = handlers[request.method as Method];
-    if (!handler) throw new HttpError(405, undefined, { cause: request });
+    if (!handler) throw new HttpError(405, STATUS_TEXT[405], { cause: request });
 
-    return handler(request, match);
+    return await handler(request, match);
   }
-  throw new HttpError(404, undefined, { cause: request });
+  throw new HttpError(404, STATUS_TEXT[404], { cause: request });
 }
 
 /**
