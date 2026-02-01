@@ -1,5 +1,8 @@
 # plain
 
+[![CI](https://github.com/iuioiua/plain/actions/workflows/ci.yml/badge.svg)](https://github.com/iuioiua/plain/actions/workflows/ci.yml)
+[![JSR](https://jsr.io/badges/@iuioiua/plain)](https://jsr.io/@iuioiua/plain)
+
 Plain, boring, framework-less utilities for creating web apps.
 
 ```ts ignore
