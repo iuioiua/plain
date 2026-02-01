@@ -1,14 +1,7 @@
-import {
-  html,
-  HttpError,
-  type Route,
-  route,
-  toHttpError,
-} from "@iuioiua/plain";
+import { html, HttpError, type Route, route } from "@iuioiua/plain";
 import { assertEquals } from "@std/assert/equals";
 import { assertInstanceOf } from "@std/assert/instance-of";
 import { assertThrows } from "@std/assert/throws";
-import type { ErrorStatus } from "@std/http/status";
 
 Deno.test("HttpError", async (t) => {
   await t.step("defaults", () => {
@@ -134,101 +127,6 @@ Deno.test("route()", async (t) => {
     assertEquals(error.status, 404);
     // @ts-ignore It's fine
     assertEquals(error.cause?.foo, "bar");
-  });
-});
-
-// deno-lint-ignore no-explicit-any
-function testToHttpError(constructor: any, status: ErrorStatus) {
-  const message = crypto.randomUUID();
-  const error = new constructor(message);
-  const httpError = toHttpError(error);
-  assertEquals(httpError.status, status);
-  assertEquals(httpError.message, message);
-  assertEquals(httpError.name, "HttpError");
-  assertEquals(httpError.cause, error);
-}
-
-Deno.test("toHttpError()", async (t) => {
-  await t.step("converts `SyntaxError`", () => {
-    testToHttpError(SyntaxError, 400);
-  });
-
-  await t.step("converts `TypeError`", () => {
-    testToHttpError(TypeError, 500);
-  });
-
-  await t.step("converts `RangeError`", () => {
-    testToHttpError(RangeError, 400);
-  });
-
-  await t.step("converts `URIError`", () => {
-    testToHttpError(URIError, 400);
-  });
-
-  await t.step("converts `EvalError`", () => {
-    testToHttpError(EvalError, 400);
-  });
-
-  await t.step("converts `Deno.errors.AddrNotAvailable`", () => {
-    testToHttpError(Deno.errors.AddrNotAvailable, 400);
-  });
-
-  await t.step("converts `Deno.errors.PermissionDenied`", () => {
-    testToHttpError(Deno.errors.PermissionDenied, 403);
-  });
-
-  await t.step("converts `Deno.errors.NotFound`", () => {
-    testToHttpError(Deno.errors.NotFound, 404);
-  });
-
-  await t.step("converts `Deno.errors.AlreadyExists`", () => {
-    testToHttpError(Deno.errors.AlreadyExists, 409);
-  });
-
-  await t.step("converts `Deno.errors.InvalidData`", () => {
-    testToHttpError(Deno.errors.InvalidData, 422);
-  });
-
-  await t.step("converts `Deno.errors.ConnectionRefused`", () => {
-    testToHttpError(Deno.errors.ConnectionRefused, 502);
-  });
-
-  await t.step("converts `Deno.errors.ConnectionReset`", () => {
-    testToHttpError(Deno.errors.ConnectionReset, 502);
-  });
-
-  await t.step("converts `Deno.errors.Http`", () => {
-    testToHttpError(Deno.errors.Http, 502);
-  });
-
-  await t.step("converts `Deno.errors.UnexpectedEof`", () => {
-    testToHttpError(Deno.errors.UnexpectedEof, 502);
-  });
-
-  await t.step("converts `Deno.errors.Busy`", () => {
-    testToHttpError(Deno.errors.Busy, 503);
-  });
-
-  await t.step("converts `Deno.errors.TimedOut`", () => {
-    testToHttpError(Deno.errors.TimedOut, 504);
-  });
-
-  await t.step("converts `Error`", () => {
-    testToHttpError(Error, 500);
-  });
-
-  await t.step("converts `HttpError`", () => {
-    const message = crypto.randomUUID();
-    const error = new HttpError(418, message);
-    const resultError = toHttpError(error);
-    assertEquals(resultError, error);
-  });
-
-  await t.step("converts non-error", () => {
-    const nonError = crypto.randomUUID();
-    const resultError = toHttpError(nonError);
-    assertEquals(resultError.status, 500);
-    assertEquals(resultError.message, "Internal Server Error");
   });
 });
 
