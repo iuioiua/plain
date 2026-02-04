@@ -35,10 +35,13 @@ export type Handler = (
  * ];
  * ```
  */
-export interface Route {
+export type Route = {
+  pattern: URLPattern;
+  handler: Handler;
+} | {
   pattern: URLPattern;
   handlers: { [method in Method]?: Handler };
-}
+};
 
 export interface HttpErrorOptions extends ErrorOptions {
   init?: ResponseInit;
@@ -132,11 +135,13 @@ export function route(
   routes: Route[],
   request: Request,
 ): ReturnType<Handler> {
-  for (const { pattern, handlers } of routes) {
-    const match = pattern.exec(request.url);
+  for (const route of routes) {
+    const match = route.pattern.exec(request.url);
     if (!match) continue;
 
-    const handler = handlers[request.method as Method];
+    const handler = "handler" in route
+      ? route.handler
+      : route.handlers[request.method as Method];
     if (!handler) throw new HttpError(405, undefined, { cause: request });
 
     return handler(request, match);

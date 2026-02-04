@@ -128,6 +128,20 @@ Deno.test("route()", async (t) => {
     // @ts-ignore It's fine
     assertEquals(error.cause?.foo, "bar");
   });
+
+  await t.step("single handler route", async () => {
+    const routes: Route[] = [
+      {
+        pattern: new URLPattern({ pathname: "/single" }),
+        handler: () => new Response("Single handler response"),
+      },
+    ];
+    const request = new Request("http://localhost/single");
+    const response = route(routes, request);
+    assertInstanceOf(response, Response);
+    assertEquals(response.status, 200);
+    assertEquals(await response.text(), "Single handler response");
+  });
 });
 
 Deno.test("html()", () => {
