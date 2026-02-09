@@ -7,11 +7,6 @@
     "@std/http": "jsr:@std/http@^1.0.24"
   },
   "tasks": {
-    "fmt": "deno fmt --check",
-    "lint": "deno lint",
-    "test": "deno test --coverage --doc --parallel",
-    "ok": {
-      "dependencies": ["fmt", "lint", "test"]
-    }
+    "ok": "deno fmt --check && deno lint && deno test --coverage --doc --parallel"
   }
 }
