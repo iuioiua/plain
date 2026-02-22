@@ -75,6 +75,7 @@
   "workspace": {
     "dependencies": [
       "jsr:@std/assert@^1.0.18",
+      "jsr:@std/html@^1.0.5",
       "jsr:@std/http@^1.0.24"
     ]
   }

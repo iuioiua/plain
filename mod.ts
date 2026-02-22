@@ -6,6 +6,9 @@ import {
 } from "@std/http/status";
 import type { Method } from "@std/http/unstable-method";
 
+/**
+ * HTTP request handler.
+ */
 export type Handler = (
   request: Request,
   match: URLPatternResult,
@@ -14,25 +17,34 @@ export type Handler = (
 /**
  * A route definition that associates a URL pattern with HTTP method handlers.
  *
- * Routes are used with the {@link route} function to match incoming HTTP requests
- * against URL patterns and dispatch them to the appropriate handler functions.
+ * Routes are used with the {@link route} function to match incoming HTTP
+ * requests against URL patterns and dispatch them to the appropriate handler
+ * functions.
  *
- * @example
+ * @example Route with handlers for multiple methods
  * ```ts
  * import type { Route } from "@iuioiua/plain";
  *
- * const routes: Route[] = [
- *   {
- *     pattern: new URLPattern({ pathname: "/users/:id" }),
- *     handlers: {
- *       GET: (request, match) => {
- *         const userId = match.pathname.groups.id;
- *         return new Response(`User ID: ${userId}`);
- *       },
- *       DELETE: () => new Response(null, { status: 204 }),
+ * const route = {
+ *   pattern: new URLPattern({ pathname: "/users/:id" }),
+ *   handlers: {
+ *     GET: (request, match) => {
+ *       const userId = match.pathname.groups.id;
+ *       return new Response(`User ID: ${userId}`);
  *     },
+ *     DELETE: () => new Response(null, { status: 204 }),
  *   },
- * ];
+ * } satisfies Route;
+ * ```
+ *
+ * @example Route with a single handler for all methods
+ * ```ts
+ * import type { Route } from "@iuioiua/plain";
+ *
+ * const route = {
+ *   pattern: new URLPattern({ pathname: "/status" }),
+ *   handler: () => new Response("OK"),
+ * } satisfies Route;
  * ```
  */
 export type Route = {
@@ -43,42 +55,183 @@ export type Route = {
   handlers: { [method in Method]?: Handler };
 };
 
+/**
+ * Options for {@linkcode HttpError}.
+ */
 export interface HttpErrorOptions extends ErrorOptions {
+  /**
+   * Configuration options for the HTTP response associated with this error.
+   */
   init?: ResponseInit;
 }
 
 /**
  * An error class for representing HTTP errors with status codes.
  *
- * `HttpError` extends the standard `Error` class to include HTTP-specific
+ * Extends the standard {@linkcode Error} class to include HTTP-specific
  * properties such as status codes and optional response initialization options.
  * It's commonly used in route handlers to signal HTTP errors that should be
  * returned to the client.
  *
- * @param status - The HTTP status code (e.g., 404, 500, 403)
  * @param message - Optional error message. Defaults to the standard status text for the given status code
  * @param options - Optional error options including cause and response init configuration
  *
- * @example
- * ```ts ignore
+ * @example Usage without custom message or options
+ * ```ts
  * import { HttpError } from "@iuioiua/plain";
+ * import { assertEquals, assertInstanceOf } from "@std/assert";
  *
- * // Throw a 404 error
- * throw new HttpError(404);
+ * try {
+ *   throw new HttpError(404);
+ * } catch (error) {
+ *   assertInstanceOf(error, HttpError);
+ *   assertEquals(error.status, 404);
+ *   assertEquals(error.message, "Not Found");
+ * }
+ * ```
  *
- * // Throw a 401 error with custom message
- * throw new HttpError(401, "Unauthorized access");
+ * @example Usage with custom message
+ * ```ts
+ * import { HttpError } from "@iuioiua/plain";
+ * import { assertEquals, assertInstanceOf } from "@std/assert";
  *
- * // Throw a 403 error with custom headers
- * throw new HttpError(403, "Forbidden", {
- *   init: { headers: { "WWW-Authenticate": 'Basic realm="Secure Area"' } },
- * });
+ * try {
+ *   throw new HttpError(500, "Something went wrong");
+ * } catch (error) {
+ *   assertInstanceOf(error, HttpError);
+ *   assertEquals(error.status, 500);
+ *   assertEquals(error.message, "Something went wrong");
+ * }
+ * ```
+ *
+ * @example Usage with response init options
+ * ```ts
+ * import { HttpError } from "@iuioiua/plain";
+ * import { assertEquals, assertInstanceOf } from "@std/assert";
+ *
+ * try {
+ *   throw new HttpError(403, "Forbidden", {
+ *     init: { headers: { "WWW-Authenticate": 'Basic realm="Secure Area"' } },
+ *   });
+ * } catch (error) {
+ *   assertInstanceOf(error, HttpError);
+ *   assertEquals(error.status, 403);
+ *   assertEquals(error.message, "Forbidden");
+ *   assertEquals(
+ *     // @ts-ignore It's fine
+ *     error.init?.headers?.["WWW-Authenticate"],
+ *     'Basic realm="Secure Area"',
+ *   );
+ * }
+ * ```
+ *
+ * @example Usage with cause
+ * ```ts
+ * import { HttpError } from "@iuioiua/plain";
+ * import { assertEquals, assertInstanceOf } from "@std/assert";
+ *
+ * try {
+ *   throw new HttpError(500, "Internal Server Error", {
+ *     cause: new Error("Database connection failed"),
+ *   });
+ * } catch (error) {
+ *   assertInstanceOf(error, HttpError);
+ *   assertEquals(error.status, 500);
+ *   assertEquals(error.message, "Internal Server Error");
+ *   assertInstanceOf(error.cause, Error);
+ *   assertEquals(error.cause?.message, "Database connection failed");
+ * }
  * ```
  */
 export class HttpError extends Error {
+  /**
+   * The HTTP status code (e.g., 404, 500, 403)
+   */
   status: InformationalStatus | RedirectStatus | ErrorStatus;
+  /**
+   * Configuration options for the HTTP response associated with this error.
+   */
   init?: ResponseInit;
 
+  /**
+   * Constructs a new {@link HttpError} instance.
+   *
+   * Extends the standard {@linkcode Error} class to include HTTP-specific
+   * properties such as status codes and optional response initialization options.
+   * It's commonly used in route handlers to signal HTTP errors that should be
+   * returned to the client.
+   *
+   * @param status - The HTTP status code (e.g., 404, 500, 403)
+   * @param message - Optional error message. Defaults to the standard status text for the given status code
+   * @param options - Optional error options including cause and response init configuration
+   *
+   * @example Usage without custom message or options
+   * ```ts
+   * import { HttpError } from "@iuioiua/plain";
+   * import { assertEquals, assertInstanceOf } from "@std/assert";
+   *
+   * try {
+   *   throw new HttpError(404);
+   * } catch (error) {
+   *   assertInstanceOf(error, HttpError);
+   *   assertEquals(error.status, 404);
+   *   assertEquals(error.message, "Not Found");
+   * }
+   * ```
+   *
+   * @example Usage with custom message
+   * ```ts
+   * import { HttpError } from "@iuioiua/plain";
+   * import { assertEquals, assertInstanceOf } from "@std/assert";
+   *
+   * try {
+   *   throw new HttpError(500, "Something went wrong");
+   * } catch (error) {
+   *   assertInstanceOf(error, HttpError);
+   *   assertEquals(error.status, 500);
+   *   assertEquals(error.message, "Something went wrong");
+   * }
+   * ```
+   *
+   * @example Usage with response init options
+   * ```ts
+   * import { HttpError } from "@iuioiua/plain";
+   * import { assertEquals, assertInstanceOf } from "@std/assert";
+   *
+   * try {
+   *   throw new HttpError(403, "Forbidden", {
+   *     init: { headers: { "WWW-Authenticate": 'Basic realm="Secure Area"' } },
+   *   });
+   * } catch (error) {
+   *   assertInstanceOf(error, HttpError);
+   *   assertEquals(error.status, 403);
+   *   assertEquals(error.message, "Forbidden");
+   *   assertEquals(
+   *     // @ts-ignore It's fine
+   *     error.init?.headers?.["WWW-Authenticate"],
+   *     'Basic realm="Secure Area"',
+   *   );
+   * }
+   * ```
+   *
+   * @example Usage with cause
+   * ```ts
+   * import { HttpError } from "@iuioiua/plain";
+   * import { assertEquals, assertInstanceOf } from "@std/assert";
+   *
+   * try {
+   *   throw new HttpError(500, "Internal Server Error", {
+   *     cause: new Error("Database connection failed"),
+   *   });
+   * } catch (error) {
+   *   assertInstanceOf(error, HttpError);
+   *   assertEquals(error.status, 500);
+   *   assertEquals(error.message, "Internal Server Error");
+   *   assertInstanceOf(error.cause, Error);
+   *   assertEquals(error.cause?.message, "Database connection failed");
+   * }
+   * ```
+   */
   constructor(
     status: InformationalStatus | RedirectStatus | ErrorStatus,
     message: string = STATUS_TEXT[status],
@@ -92,7 +245,8 @@ export class HttpError extends Error {
 }
 
 /**
- * Routes an incoming HTTP request to the appropriate handler based on URL patterns and HTTP methods.
+ * Routes an incoming HTTP request to the appropriate handler based on URL
+ * patterns and HTTP methods.
  *
  * This function iterates through the provided routes, matching the request URL against
  * each route's pattern. When a match is found, it invokes the corresponding handler for
@@ -106,17 +260,19 @@ export class HttpError extends Error {
  * @throws {HttpError} Throws a 404 error if no matching route is found, or a 405 error
  * if the route matches but the HTTP method is not supported
  *
- * @example
+ * @example Usage
  * ```ts ignore
  * import { route, HttpError } from "@iuioiua/plain";
  *
  * const routes: Route[] = [
+ *   // Static route
  *   {
  *     pattern: new URLPattern({ pathname: "/" }),
  *     handlers: {
  *       GET: () => new Response("Hello, world!"),
  *     },
  *   },
+ *   // Dynamic route with URL parameters
  *   {
  *     pattern: new URLPattern({ pathname: "/users/:id" }),
  *     handlers: {
@@ -126,9 +282,25 @@ export class HttpError extends Error {
  *       },
  *     },
  *   },
+ *   // Route with a single handler for all methods
+ *   {
+ *     pattern: new URLPattern({ pathname: "/status" }),
+ *     handler: () => new Response("OK"),
+ *   },
  * ];
  *
- * Deno.serve((request) => route(routes, request));
+ * export default {
+ *   fetch(request: Request) {
+ *     try {
+ *       return route(routes, request);
+ *     } catch (error) {
+ *       if (error instanceof HttpError) {
+ *         return new Response(error.message, { status: error.status, ...error.init });
+ *       }
+ *       return new Response("Internal Server Error", { status: 500 });
+ *     }
+ *   },
+ * } satisfies Deno.ServeDefaultHandler;
  * ```
  */
 export function route(
@@ -150,23 +322,27 @@ export function route(
 }
 
 /**
- * A template literal tag function for creating HTML strings with interpolated values.
+ * A template literal tag function for creating HTML strings with interpolated
+ * values.
  *
- * This function processes template literals and concatenates them with interpolated values.
- * Values are inserted as-is without any HTML escaping or sanitization. Undefined values
- * are treated as empty strings.
+ * This function processes template literals and concatenates them with
+ * interpolated values. Values are inserted as-is without any HTML escaping or
+ * sanitization. Undefined values are treated as empty strings.
  *
- * **Security Warning**: This function does NOT escape HTML. When interpolating user-provided
- * data, you must manually escape it to prevent XSS (Cross-Site Scripting) attacks. Only use
- * this function with trusted data or data that has been properly sanitized.
+ * [!WARNING]
+ * **Security Warning**: This function does NOT escape HTML. When interpolating
+ * user-provided data, you must manually escape it to prevent XSS (Cross-Site
+ * Scripting) attacks. Only usethis function with trusted data or data that has
+ * been properly sanitized.
  *
  * @param strings - The template string array containing the static parts of the template
  * @param values - The values to be interpolated into the template
  * @returns The resulting HTML string with interpolated values
  *
- * @example
+ * @example Usage with trusted content
  * ```ts
  * import { html } from "@iuioiua/plain";
+ * import { assertEquals } from "@std/assert/equals";
  *
  * const name = "Alice";
  * const color = "blue";
@@ -177,33 +353,28 @@ export function route(
  *   </div>
  * `;
  *
- * // Returns:
- * // <div>
- * //   <h1>Hello, Alice!</h1>
- * //   <p style="color: blue;">Welcome to our site.</p>
- * // </div>
+ * assertEquals(htmlContent, `
+ *   <div>
+ *     <h1>Hello, Alice!</h1>
+ *     <p style="color: blue;">Welcome to our site.</p>
+ *   </div>
+ * `);
  * ```
  *
- * @example
+ * @example Usage with untrusted content that needs to be escaped
  * ```ts
  * import { html } from "@iuioiua/plain";
+ * import { assertEquals } from "@std/assert/equals";
+ * import { escape } from "@std/html/entities";
  *
  * // WARNING: This is vulnerable to XSS attacks!
  * const userInput = '<script>alert("XSS")</script>';
  * const unsafeHtml = html`<div>${userInput}</div>`;
- * // Result contains: <div><script>alert("XSS")</script></div>
  *
- * // Instead, escape user input before using it:
- * function escapeHtml(str: string): string {
- *   return str
- *     .replace(/&/g, "&amp;")
- *     .replace(/</g, "&lt;")
- *     .replace(/>/g, "&gt;")
- *     .replace(/"/g, "&quot;")
- *     .replace(/'/g, "&#039;");
- * }
- * const safeHtml = html`<div>${escapeHtml(userInput)}</div>`;
- * // Result contains: <div>&lt;script&gt;alert("XSS")&lt;/script&gt;</div>
+ * const safeHtml = html`<div>${escape(userInput)}</div>`;
+ *
+ * assertEquals(unsafeHtml, '<div><script>alert("XSS")</script></div>');
+ * assertEquals(safeHtml, "<div>&lt;script&gt;alert(&quot;XSS&quot;)&lt;/script&gt;</div>");
  * ```
  */
 export function html(
