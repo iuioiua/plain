@@ -34,12 +34,12 @@ Deno.test("HttpError initialises with custom properties", () => {
 Deno.test("route() routes static route", async () => {
   const routes = [
     {
-      pattern: new URLPattern({ pathname: "/test" }),
+      matcher: ({ pathname }) => pathname === "/test",
       handlers: {
         GET: () => new Response("I'm a static route"),
       },
     },
-  ];
+  ] satisfies Route[];
   const request = new Request("http://localhost/test");
   const response = route(routes, request);
   assertInstanceOf(response, Response);
@@ -48,12 +48,16 @@ Deno.test("route() routes static route", async () => {
 });
 
 Deno.test("route() routes dynamic route", async () => {
+  const pattern = new URLPattern({ pathname: "/foo/:bar" });
   const routes: Route[] = [
     {
-      pattern: new URLPattern({ pathname: "/foo/:bar" }),
+      matcher: ({ href }) => pattern.test(href),
       handlers: {
         GET: () => new Response("I'm a dynamic route"),
-        POST: (_request, match) => new Response(match.pathname.groups.bar),
+        POST: () =>
+          new Response(
+            pattern.exec("http://localhost/foo/123")?.pathname.groups.bar,
+          ),
       },
     },
   ];
@@ -67,7 +71,7 @@ Deno.test("route() routes dynamic route", async () => {
 Deno.test('route() throws HTTP 404 "Not Found" error if no route matches the request URL', () => {
   const routes: Route[] = [
     {
-      pattern: new URLPattern({ pathname: "/test" }),
+      matcher: ({ pathname }) => pathname === "/test",
       handlers: {
         GET: () => new Response("I'm a static route"),
       },
@@ -86,7 +90,7 @@ Deno.test('route() throws HTTP 404 "Not Found" error if no route matches the req
 Deno.test('route() throws HTTP 405 "Method Not Allowed" error if a route matches the request URL but does not have a handler for the request method', () => {
   const routes: Route[] = [
     {
-      pattern: new URLPattern({ pathname: "/test" }),
+      matcher: ({ pathname }) => pathname === "/test",
       handlers: {
         GET: () => new Response("I'm a static route"),
       },
@@ -105,7 +109,7 @@ Deno.test('route() throws HTTP 405 "Method Not Allowed" error if a route matches
 Deno.test("route() throws error thrown in handler", () => {
   const routes: Route[] = [
     {
-      pattern: new URLPattern({ pathname: "/throws" }),
+      matcher: ({ pathname }) => pathname === "/throws",
       handlers: {
         GET: () => {
           throw new HttpError(404, "I'm a 404 message", {
@@ -129,7 +133,7 @@ Deno.test("route() throws error thrown in handler", () => {
 Deno.test("route() routes route with single handler", async () => {
   const routes: Route[] = [
     {
-      pattern: new URLPattern({ pathname: "/single" }),
+      matcher: ({ pathname }) => pathname === "/single",
       handler: () => new Response("Single handler response"),
     },
   ];
