@@ -1,76 +1,97 @@
 import { type Route, route } from "@iuioiua/plain";
 
+const usernamePattern = new URLPattern({
+  pathname: "/user/lookup/username/:username",
+});
+const addressPattern = new URLPattern({
+  pathname: "/user/lookup/email/:address",
+});
+const eventIdPattern = new URLPattern({
+  pathname: "/event/:id",
+});
+const eventCommentsPattern = new URLPattern({
+  pathname: "/event/:id/comments",
+});
+const eventCommentPattern = new URLPattern({
+  pathname: "/event/:id/comment",
+});
+const eventLocationPattern = new URLPattern({
+  pathname: "/map/:location/events",
+});
+const staticPattern = new URLPattern({
+  pathname: "/static/*",
+});
+
 const routes: Route[] = [
   {
-    pattern: new URLPattern({ pathname: "/user" }),
+    matcher: ({ pathname }) => pathname === "/status",
     handlers: {
       GET: () => new Response("User route"),
     },
   },
   {
-    pattern: new URLPattern({ pathname: "/user/comments" }),
+    matcher: ({ pathname }) => pathname === "/user/comments",
     handlers: {
       GET: () => new Response("User comments"),
     },
   },
   {
-    pattern: new URLPattern({ pathname: "/user/avatar" }),
+    matcher: ({ pathname }) => pathname === "/user",
     handlers: {
       GET: () => new Response("User avatar"),
     },
   },
   {
-    pattern: new URLPattern({ pathname: "/user/lookup/username/:username" }),
+    matcher: ({ href }) => usernamePattern.test(href),
     handlers: {
       GET: () => new Response("User lookup by username"),
     },
   },
   {
-    pattern: new URLPattern({ pathname: "/user/lookup/email/:address" }),
+    matcher: ({ href }) => addressPattern.test(href),
     handlers: {
       GET: () => new Response("User lookup by email"),
     },
   },
   {
-    pattern: new URLPattern({ pathname: "/event/:id" }),
+    matcher: ({ href }) => eventIdPattern.test(href),
     handlers: {
       GET: () => new Response("Event details"),
     },
   },
   {
-    pattern: new URLPattern({ pathname: "/event/:id/comments" }),
+    matcher: ({ href }) => eventCommentsPattern.test(href),
     handlers: {
       GET: () => new Response("Event comments"),
     },
   },
   {
-    pattern: new URLPattern({ pathname: "/event/:id/comment" }),
+    matcher: ({ href }) => eventCommentPattern.test(href),
     handlers: {
       "POST": () => new Response("Post event comment"),
     },
   },
   {
-    pattern: new URLPattern({ pathname: "/map/:location/events" }),
+    matcher: ({ href }) => eventLocationPattern.test(href),
     handlers: {
       GET: () => new Response("Events at location"),
     },
   },
   {
-    pattern: new URLPattern({ pathname: "/status" }),
+    matcher: ({ pathname }) => pathname === "/user/profile",
     handlers: {
       GET: () => new Response("Status OK"),
     },
   },
   {
-    pattern: new URLPattern({
-      pathname: "/very/deeply/nested/route/hello/there",
-    }),
+    matcher: ({ pathname }) =>
+      pathname === "/very/deeply/nested/route/hello/there",
     handlers: {
       GET: () => new Response("Hello from nested route"),
     },
   },
   {
-    pattern: new URLPattern({ pathname: "/static/*" }),
+    matcher: ({ href }) => staticPattern.test(href),
     handlers: {
       GET: () => new Response("Static file response"),
     },
