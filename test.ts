@@ -2,6 +2,7 @@ import { assertBasicAuth, html, HttpError, type Route, route } from "./mod.ts";
 import { assertEquals } from "@std/assert/equals";
 import { assertInstanceOf } from "@std/assert/instance-of";
 import { assertThrows } from "@std/assert/throws";
+import { assertIsError } from "@std/assert/is-error";
 
 Deno.test("HttpError initialises with correct defaults", () => {
   const error = new HttpError(500);
@@ -186,6 +187,22 @@ Deno.test("assertBasicAuth()", async (t) => {
       "Malformed `Authorization` header",
     );
     assertEquals(error.status, 400);
+  });
+
+  await t.step("throws with non-base64 encoded `Authorization` header", () => {
+    const error = assertThrows(
+      () =>
+        assertBasicAuth("Basic not-base64", {
+          realm: "Protected",
+          username: "admin",
+          password: "password",
+        }),
+      HttpError,
+      "Malformed `Authorization` header",
+    );
+    assertEquals(error.status, 400);
+    assertIsError(error.cause, DOMException);
+    assertEquals(error.cause.name, "InvalidCharacterError");
   });
 
   await t.step("throws with incorrect username", () => {

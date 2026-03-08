@@ -485,7 +485,15 @@ export function assertBasicAuth(
     throw new HttpError(400, "Malformed `Authorization` header");
   }
 
-  const credentials = atob(encodedCredentials);
+  let credentials: string;
+  try {
+    // See https://developer.mozilla.org/en-US/docs/Web/API/Window/atob#exceptions
+    credentials = atob(encodedCredentials);
+  } catch (error) {
+    throw new HttpError(400, "Malformed `Authorization` header", {
+      cause: error,
+    });
+  }
   const colonIndex = credentials.indexOf(":");
   if (colonIndex === -1) {
     throw new HttpError(400, "Malformed `Authorization` header");
