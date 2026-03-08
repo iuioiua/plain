@@ -507,3 +507,38 @@ export function assertBasicAuth(
     );
   }
 }
+
+/**
+ * Creates a {@linkcode Response} that redirects the client to a different URL
+ * orrelative path.
+ *
+ * This is a more flexible alternative to {@linkcode Response.redirect}, which
+ * only supports absolute URLs.
+ *
+ * @param location - The URL or relative path to redirect the client to
+ * @param status - The HTTP status code for the redirection (default is 302)
+ * @returns A response object representing the redirection
+ *
+ * @example Usage
+ * ```ts
+ * import { redirect, type Route } from "@iuioiua/plain";
+ *
+ * function GET(): Response {
+ *   return redirect("/new-location");
+ * }
+ *
+ * export const redirectRoute = {
+ *   pattern: new URLPattern({ pathname: "/old-location" }),
+ *   handlers: { GET },
+ * } satisfies Route;
+ * ```
+ */
+export function redirect(
+  location: string,
+  status: RedirectStatus = 302,
+): Response {
+  return new Response(null, {
+    status,
+    headers: { location },
+  });
+}

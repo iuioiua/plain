@@ -1,4 +1,11 @@
-import { assertBasicAuth, html, HttpError, type Route, route } from "./mod.ts";
+import {
+  assertBasicAuth,
+  html,
+  HttpError,
+  redirect,
+  type Route,
+  route,
+} from "./mod.ts";
 import { assertEquals } from "@std/assert/equals";
 import { assertInstanceOf } from "@std/assert/instance-of";
 import { assertThrows } from "@std/assert/throws";
@@ -272,4 +279,11 @@ Deno.test("assertBasicAuth()", async (t) => {
       password: "pass:word",
     });
   });
+});
+
+Deno.test("redirect()", () => {
+  const response = redirect("/new-location", 301);
+  assertInstanceOf(response, Response);
+  assertEquals(response.status, 301);
+  assertEquals(response.headers.get("Location"), "/new-location");
 });
