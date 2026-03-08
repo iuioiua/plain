@@ -218,7 +218,7 @@ Deno.test("assertBasicAuth()", async (t) => {
     );
     assertEquals(error.status, 401);
     assertEquals(
-      // @ts-ignore idk
+      // @ts-ignore It's fine
       error.init?.headers?.["WWW-Authenticate"],
       `Basic realm="Admin tools"`,
     );

@@ -432,7 +432,7 @@ export interface AssertBasicAuthConfig {
  *
  * @example Usage
  * ```ts
- * import { assertBasicAuth, Route } from "@iuioiua/plain";
+ * import { assertBasicAuth, HttpError, type Route } from "@iuioiua/plain";
  *
  * function GET(request: Request): Response {
  *   try {
@@ -456,7 +456,7 @@ export interface AssertBasicAuthConfig {
  * export const protectedRoute = {
  *   pattern: new URLPattern({ pathname: "/admin" }),
  *   handlers: { GET },
- * }
+ * } satisfies Route;
  * ```
  */
 export function assertBasicAuth(
