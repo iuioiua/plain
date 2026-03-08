@@ -386,3 +386,111 @@ export function html(
     "",
   );
 }
+
+/**
+ * Configuration parameters for {@linkcode assertBasicAuth}.
+ */
+export interface AssertBasicAuthConfig {
+  /**
+   * Authentication parameter corresponding to the
+   * {@linkcode https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/WWW-Authenticate | realm}
+   * directive in the
+   * {@linkcode https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/WWW-Authenticate | WWW-Authenticate}
+   * header.
+   */
+  realm: string;
+  /**
+   * The expected username for basic authentication. This will be compared against the
+   * username extracted from the `Authorization` header of the incoming request.
+   */
+  username: string;
+  /**
+   * The expected password for basic authentication. This will be compared against the
+   * password extracted from the `Authorization` header of the incoming request.
+   */
+  password: string;
+}
+
+/**
+ * Asserts that the provided
+ * {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Authorization | `Authorization` header}
+ * contains valid Basic Authentication credentials.
+ *
+ * @throws {HttpError} Throws a 401 error if the `Authorization` header is
+ * missing or contains incorrect credentials, or a 400 error if the header is
+ * malformed.
+ *
+ * [!WARNING]
+ * This function performs a simple equality check against the provided username
+ * and password. In production scenarios, you should implement a secure
+ * authentication mechanism that properly hashes and salts passwords, and
+ * consider using established authentication libraries or services.
+ *
+ * @param authHeader - The value of the `Authorization` header from the incoming
+ * request
+ * @param config - Configuration options including the expected realm, username,
+ * and password
+ *
+ * @example Usage
+ * ```ts
+ * import { assertBasicAuth, Route } from "@iuioiua/plain";
+ *
+ * function GET(request: Request): Response {
+ *   try {
+ *     assertBasicAuth(request.headers.get("Authorization"), {
+ *       realm: "Admin tools",
+ *       username: "admin",
+ *       password: "password",
+ *     });
+ *     return new Response("Welcome, admin!");
+ *   } catch (error) {
+ *     if (error instanceof HttpError) {
+ *       return new Response(error.message, {
+ *         status: error.status,
+ *         ...error.init
+ *       });
+ *     }
+ *     return new Response("Internal Server Error", { status: 500 });
+ *   }
+ * }
+ *
+ * export const protectedRoute = {
+ *   pattern: new URLPattern({ pathname: "/admin" }),
+ *   handlers: { GET },
+ * }
+ * ```
+ */
+export function assertBasicAuth(
+  authHeader: string | null,
+  config: AssertBasicAuthConfig,
+) {
+  const UNAUTHORIZED_ERROR_OPTIONS = {
+    init: {
+      headers: {
+        "WWW-Authenticate": `Basic realm="${config.realm}"`,
+      },
+    },
+  };
+
+  if (!authHeader) {
+    throw new HttpError(
+      401,
+      "Missing `Authorization` header",
+      UNAUTHORIZED_ERROR_OPTIONS,
+    );
+  }
+
+  const [scheme, encodedCredentials] = authHeader.split(" ");
+  if (scheme !== "Basic" || !encodedCredentials) {
+    throw new HttpError(400, "Malformed `Authorization` header");
+  }
+
+  const [username, password] = atob(encodedCredentials).split(":");
+  if (username !== config.username || password !== config.password) {
+    throw new HttpError(
+      401,
+      "Incorrect credentials",
+      UNAUTHORIZED_ERROR_OPTIONS,
+    );
+  }
+}
