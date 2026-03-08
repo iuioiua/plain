@@ -1,7 +1,8 @@
-import { html, HttpError, type Route, route } from "@iuioiua/plain";
+import { assertBasicAuth, html, HttpError, type Route, route } from "./mod.ts";
 import { assertEquals } from "@std/assert/equals";
 import { assertInstanceOf } from "@std/assert/instance-of";
 import { assertThrows } from "@std/assert/throws";
+import { assertIsError } from "@std/assert/is-error";
 
 Deno.test("HttpError initialises with correct defaults", () => {
   const error = new HttpError(500);
@@ -152,4 +153,123 @@ Deno.test("html() returns HTML string with interpolated values", () => {
     <span style="color: red;">blue</span>
   `,
   );
+});
+
+Deno.test("assertBasicAuth()", async (t) => {
+  await t.step("throws with missing `Authorization` header", () => {
+    const error = assertThrows(
+      () =>
+        assertBasicAuth(null, {
+          realm: "Protected",
+          username: "admin",
+          password: "password",
+        }),
+      HttpError,
+      "Missing `Authorization` header",
+    );
+    assertEquals(error.status, 401);
+    assertEquals(
+      // @ts-ignore It's fine
+      error.init?.headers?.["WWW-Authenticate"],
+      'Basic realm="Protected"',
+    );
+  });
+
+  await t.step("throws with malformed `Authorization` header", () => {
+    const error = assertThrows(
+      () =>
+        assertBasicAuth("malformed", {
+          realm: "Protected",
+          username: "admin",
+          password: "password",
+        }),
+      HttpError,
+      "Malformed `Authorization` header",
+    );
+    assertEquals(error.status, 400);
+  });
+
+  await t.step("throws with non-base64 encoded `Authorization` header", () => {
+    const error = assertThrows(
+      () =>
+        assertBasicAuth("Basic not-base64", {
+          realm: "Protected",
+          username: "admin",
+          password: "password",
+        }),
+      HttpError,
+      "Malformed `Authorization` header",
+    );
+    assertEquals(error.status, 400);
+    assertIsError(error.cause, DOMException);
+    assertEquals(error.cause.name, "InvalidCharacterError");
+  });
+
+  await t.step("throws with no username/password colon separator", () => {
+    const error = assertThrows(
+      () =>
+        assertBasicAuth(`Basic ${btoa("adminpassword")}`, {
+          realm: "Protected",
+          username: "admin",
+          password: "password",
+        }),
+      HttpError,
+      "Malformed `Authorization` header",
+    );
+    assertEquals(error.status, 400);
+  });
+
+  await t.step("throws with incorrect username", () => {
+    const error = assertThrows(
+      () =>
+        assertBasicAuth(`Basic ${btoa("wrong-username:password")}`, {
+          realm: "Admin tools",
+          username: "admin",
+          password: "password",
+        }),
+      HttpError,
+      "Incorrect credentials",
+    );
+    assertEquals(error.status, 401);
+    assertEquals(
+      // @ts-ignore It's fine
+      error.init?.headers?.["WWW-Authenticate"],
+      `Basic realm="Admin tools"`,
+    );
+  });
+
+  await t.step("throws with incorrect password", () => {
+    const error = assertThrows(
+      () =>
+        assertBasicAuth(`Basic ${btoa("admin:wrong-password")}`, {
+          realm: "Admin tools",
+          username: "admin",
+          password: "password",
+        }),
+      HttpError,
+      "Incorrect credentials",
+    );
+    assertEquals(error.status, 401);
+    assertEquals(
+      // @ts-ignore It's fine
+      error.init?.headers?.["WWW-Authenticate"],
+      `Basic realm="Admin tools"`,
+    );
+  });
+
+  await t.step("doesn't throw with correct request", () => {
+    assertBasicAuth(`Basic ${btoa("admin:password")}`, {
+      realm: "Admin tools",
+      username: "admin",
+      password: "password",
+    });
+  });
+
+  await t.step("doesn't throw with colon in password", () => {
+    assertBasicAuth(`Basic ${btoa("admin:pass:word")}`, {
+      realm: "Admin tools",
+      username: "admin",
+      password: "pass:word",
+    });
+  });
 });
