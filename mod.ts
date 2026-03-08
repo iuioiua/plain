@@ -485,7 +485,13 @@ export function assertBasicAuth(
     throw new HttpError(400, "Malformed `Authorization` header");
   }
 
-  const [username, password] = atob(encodedCredentials).split(":");
+  const credentials = atob(encodedCredentials);
+  const colonIndex = credentials.indexOf(":");
+  if (colonIndex === -1) {
+    throw new HttpError(400, "Malformed `Authorization` header");
+  }
+  const username = credentials.slice(0, colonIndex);
+  const password = credentials.slice(colonIndex + 1);
   if (username !== config.username || password !== config.password) {
     throw new HttpError(
       401,

@@ -233,4 +233,12 @@ Deno.test("assertBasicAuth()", async (t) => {
       password: "password",
     });
   });
+
+  await t.step("doesn't throw with colon in password", () => {
+    assertBasicAuth(`Basic ${btoa("admin:pass:word")}`, {
+      realm: "Admin tools",
+      username: "admin",
+      password: "pass:word",
+    });
+  });
 });
