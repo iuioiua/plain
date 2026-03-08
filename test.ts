@@ -94,7 +94,6 @@ Deno.test("route()", async (t) => {
         "Not Found",
       );
       assertEquals(error.status, 404);
-      assertEquals(error.cause, request);
     },
   );
 
@@ -110,7 +109,6 @@ Deno.test("route()", async (t) => {
         "Method Not Allowed",
       );
       assertEquals(error.status, 405);
-      assertEquals(error.cause, request);
     },
   );
 

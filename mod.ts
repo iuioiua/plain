@@ -314,11 +314,11 @@ export function route(
     const handler = "handler" in route
       ? route.handler
       : route.handlers[request.method as Method];
-    if (!handler) throw new HttpError(405, undefined, { cause: request });
+    if (!handler) throw new HttpError(405, undefined);
 
     return handler(request, match);
   }
-  throw new HttpError(404, undefined, { cause: request });
+  throw new HttpError(404, undefined);
 }
 
 /**
