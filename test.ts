@@ -205,6 +205,20 @@ Deno.test("assertBasicAuth()", async (t) => {
     assertEquals(error.cause.name, "InvalidCharacterError");
   });
 
+  await t.step("throws with no username/password colon separator", () => {
+    const error = assertThrows(
+      () =>
+        assertBasicAuth(`Basic ${btoa("adminpassword")}`, {
+          realm: "Protected",
+          username: "admin",
+          password: "password",
+        }),
+      HttpError,
+      "Malformed `Authorization` header",
+    );
+    assertEquals(error.status, 400);
+  });
+
   await t.step("throws with incorrect username", () => {
     const error = assertThrows(
       () =>
