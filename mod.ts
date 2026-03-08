@@ -414,17 +414,16 @@ export interface AssertBasicAuthConfig {
 /**
  * Asserts that the provided
  * {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Authorization | `Authorization` header}
- * contains valid Basic Authentication credentials.
+ * contains valid
+ * {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Authentication#basic_authentication_scheme | Basic Authentication}
+ * credentials.
  *
- * @throws {HttpError} Throws a 401 error if the `Authorization` header is
- * missing or contains incorrect credentials, or a 400 error if the header is
- * malformed.
- *
- * [!WARNING]
- * This function performs a simple equality check against the provided username
- * and password. In production scenarios, you should implement a secure
- * authentication mechanism that properly hashes and salts passwords, and
- * consider using established authentication libraries or services.
+ * @throws {HttpError} Throws a
+ * {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/401 | HTTP 401}
+ * error if the `Authorization` header is missing or contains incorrect
+ * credentials, or a
+ * {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/400 | HTTP 400}
+ * error if the header is malformed.
  *
  * @param authHeader - The value of the `Authorization` header from the incoming
  * request
