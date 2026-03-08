@@ -8,8 +8,7 @@ export type Route = {
 
 export function findHandler(
   routes: Route[],
-  request: Request,
+  pathname: string,
 ): Handler | undefined {
-  const { pathname } = new URL(request.url);
   return routes.find((route) => route.matcher(pathname))?.handler;
 }

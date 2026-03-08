@@ -1,30 +1,36 @@
 import { findHandler, type Route } from "./x.ts";
 import findMyWay from "find-my-way";
 
-const honoRouter = findMyWay();
-honoRouter.get("/user", () => new Response("User route"));
-honoRouter.get("/user/comments", () => new Response("User comments"));
-honoRouter.get("/user/avatar", () => new Response("User avatar"));
-honoRouter.get(
+const findMyWayRouter = findMyWay();
+findMyWayRouter.get("/user", () => new Response("User route"));
+findMyWayRouter.get("/user/comments", () => new Response("User comments"));
+findMyWayRouter.get("/user/avatar", () => new Response("User avatar"));
+findMyWayRouter.get(
   "/user/lookup/username/:username",
   () => new Response("User lookup by username"),
 );
-honoRouter.get(
+findMyWayRouter.get(
   "/user/lookup/email/:address",
   () => new Response("User lookup by email"),
 );
-honoRouter.get("/event/:id", () => new Response("Event details"));
-honoRouter.get("/event/:id/comments", () => new Response("Event comments"));
-honoRouter.post("/event/:id/comment", () => new Response("Post event comment"));
-honoRouter.get(
+findMyWayRouter.get("/event/:id", () => new Response("Event details"));
+findMyWayRouter.get(
+  "/event/:id/comments",
+  () => new Response("Event comments"),
+);
+findMyWayRouter.post(
+  "/event/:id/comment",
+  () => new Response("Post event comment"),
+);
+findMyWayRouter.get(
   "/map/:location/events",
   () => new Response("Events at location"),
 );
-honoRouter.get(
+findMyWayRouter.get(
   "/very/deeply/nested/route/hello/there",
   () => new Response("Hello from nested route"),
 );
-honoRouter.get("/static/*", () => new Response("Static file response"));
+findMyWayRouter.get("/static/*", () => new Response("Static file response"));
 
 const routes: Route[] = [
   {
@@ -114,10 +120,10 @@ const routes: Route[] = [
   const request = new Request(`http://localhost${path}`, { method });
   const pathname = new URL(request.url).pathname;
   Deno.bench("x", { group: name }, () => {
-    findHandler(routes, request);
+    findHandler(routes, pathname);
   });
   Deno.bench("hono", { group: name }, () => {
     // @ts-ignore It's fine
-    honoRouter.find(request.method, pathname);
+    findMyWayRouter.find(request.method, pathname);
   });
 });
