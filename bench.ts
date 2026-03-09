@@ -114,8 +114,8 @@ const routes: Route[] = [
     path: "/static/index.html",
   },
 ].forEach(({ name, method, path }) => {
+  const request = new Request(`http://localhost${path}`, { method });
   Deno.bench(name, () => {
-    const request = new Request(`http://localhost${path}`, { method });
     route(routes, request);
   });
 });
