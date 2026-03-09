@@ -5,7 +5,8 @@
   "imports": {
     "@std/assert": "jsr:@std/assert@^1.0.19",
     "@std/html": "jsr:@std/html@^1.0.5",
-    "@std/http": "jsr:@std/http@^1.0.25"
+    "@std/http": "jsr:@std/http@^1.0.25",
+    "find-my-way": "npm:find-my-way@^9.5.0"
   },
   "tasks": {
     "ok": "deno fmt --check && deno lint && deno test --coverage --doc --parallel"

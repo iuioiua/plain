@@ -1,83 +1,24 @@
-import { type Route, route } from "@iuioiua/plain";
+import { type Route, route } from "./mod.ts";
+import findMyWay from "find-my-way";
 
-const routes: Route[] = [
-  {
-    pattern: new URLPattern({ pathname: "/user" }),
-    handlers: {
-      GET: () => new Response("User route"),
-    },
-  },
-  {
-    pattern: new URLPattern({ pathname: "/user/comments" }),
-    handlers: {
-      GET: () => new Response("User comments"),
-    },
-  },
-  {
-    pattern: new URLPattern({ pathname: "/user/avatar" }),
-    handlers: {
-      GET: () => new Response("User avatar"),
-    },
-  },
-  {
-    pattern: new URLPattern({ pathname: "/user/lookup/username/:username" }),
-    handlers: {
-      GET: () => new Response("User lookup by username"),
-    },
-  },
-  {
-    pattern: new URLPattern({ pathname: "/user/lookup/email/:address" }),
-    handlers: {
-      GET: () => new Response("User lookup by email"),
-    },
-  },
-  {
-    pattern: new URLPattern({ pathname: "/event/:id" }),
-    handlers: {
-      GET: () => new Response("Event details"),
-    },
-  },
-  {
-    pattern: new URLPattern({ pathname: "/event/:id/comments" }),
-    handlers: {
-      GET: () => new Response("Event comments"),
-    },
-  },
-  {
-    pattern: new URLPattern({ pathname: "/event/:id/comment" }),
-    handlers: {
-      "POST": () => new Response("Post event comment"),
-    },
-  },
-  {
-    pattern: new URLPattern({ pathname: "/map/:location/events" }),
-    handlers: {
-      GET: () => new Response("Events at location"),
-    },
-  },
-  {
-    pattern: new URLPattern({ pathname: "/status" }),
-    handlers: {
-      GET: () => new Response("Status OK"),
-    },
-  },
-  {
-    pattern: new URLPattern({
-      pathname: "/very/deeply/nested/route/hello/there",
-    }),
-    handlers: {
-      GET: () => new Response("Hello from nested route"),
-    },
-  },
-  {
-    pattern: new URLPattern({ pathname: "/static/*" }),
-    handlers: {
-      GET: () => new Response("Static file response"),
-    },
-  },
+function noop() {}
+
+const routes = [
+  { method: "GET", path: "/user" },
+  { method: "GET", path: "/user/comments" },
+  { method: "GET", path: "/user/avatar" },
+  { method: "GET", path: "/user/lookup/username/:username" },
+  { method: "GET", path: "/user/lookup/email/:address" },
+  { method: "GET", path: "/event/:id" },
+  { method: "GET", path: "/event/:id/comments" },
+  { method: "POST", path: "/event/:id/comment" },
+  { method: "GET", path: "/map/:location/events" },
+  { method: "GET", path: "/status" },
+  { method: "GET", path: "/very/deeply/nested/route/hello/there" },
+  { method: "GET", path: "/static/*" },
 ];
 
-[
+const benchmarks = [
   {
     name: "short static",
     method: "GET",
@@ -113,9 +54,32 @@ const routes: Route[] = [
     method: "GET",
     path: "/static/index.html",
   },
-].forEach(({ name, method, path }) => {
-  const request = new Request(`http://localhost${path}`, { method });
-  Deno.bench(name, () => {
-    route(routes, request);
+];
+
+const plainRoutes: Route[] = routes.map(({ method, path }) => ({
+  pattern: new URLPattern({ pathname: path }),
+  handlers: { [method]: noop },
+}));
+
+const findMyWayRouter = findMyWay();
+for (const route of routes) {
+  // @ts-ignore It's fine
+  findMyWayRouter.on(route.method, route.path, noop);
+}
+
+for (const benchmark of benchmarks) {
+  const request = new Request(`http://localhost${benchmark.path}`, {
+    method: benchmark.method,
   });
-});
+  const { pathname } = new URL(request.url);
+
+  Deno.bench("@iuioiua/plain", { group: benchmark.name }, () => {
+    // @ts-ignore It's fine
+    route(plainRoutes, request);
+  });
+
+  Deno.bench("find-my-way", { group: benchmark.name }, () => {
+    // @ts-ignore It's fine
+    findMyWayRouter.find(benchmark.method, pathname);
+  });
+}
