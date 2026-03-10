@@ -6,13 +6,11 @@ import {
 } from "@std/http/status";
 import type { Method } from "@std/http/unstable-method";
 
+export type Matcher = (url: URL) => boolean;
 /**
  * HTTP request handler.
  */
-export type Handler = (
-  request: Request,
-  match: URLPatternResult,
-) => Response | Promise<Response>;
+export type Handler = (request: Request) => Response | Promise<Response>;
 
 /**
  * A route definition that associates a URL pattern with HTTP method handlers.
@@ -26,7 +24,7 @@ export type Handler = (
  * import type { Route } from "@iuioiua/plain";
  *
  * const route = {
- *   pattern: new URLPattern({ pathname: "/users/:id" }),
+ *   matcher: (url) => new URLPattern({ pathname: "/users/:id" }).test(url),
  *   handlers: {
  *     GET: (request, match) => {
  *       const userId = match.pathname.groups.id;
@@ -48,10 +46,10 @@ export type Handler = (
  * ```
  */
 export type Route = {
-  pattern: URLPattern;
+  matcher: Matcher;
   handler: Handler;
 } | {
-  pattern: URLPattern;
+  matcher: Matcher;
   handlers: { [method in Method]?: Handler };
 };
 
@@ -305,20 +303,23 @@ export class HttpError extends Error {
  */
 export function route(
   routes: Route[],
-  request: Request,
-): ReturnType<Handler> {
-  for (const route of routes) {
-    const match = route.pattern.exec(request.url);
-    if (!match) continue;
-
-    const handler = "handler" in route
-      ? route.handler
-      : route.handlers[request.method as Method];
-    if (!handler) throw new HttpError(405, undefined);
-
-    return handler(request, match);
+  requestUrl: URL,
+  requestMethod: string,
+): Handler {
+  const matchedRoute = routes.find((route) => route.matcher(requestUrl));
+  if (!matchedRoute) {
+    throw new HttpError(404);
   }
-  throw new HttpError(404, undefined);
+
+  if ("handler" in matchedRoute) {
+    return matchedRoute.handler;
+  }
+
+  const handler = matchedRoute.handlers[requestMethod as Method];
+  if (!handler) {
+    throw new HttpError(405);
+  }
+  return handler;
 }
 
 /**

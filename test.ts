@@ -42,19 +42,23 @@ Deno.test("HttpError", async (t) => {
 });
 
 Deno.test("route()", async (t) => {
+  const fooBarPattern = new URLPattern({ pathname: "/foo/:bar" });
   const routes = [
     {
-      pattern: new URLPattern({ pathname: "/test" }),
+      matcher: (requestUrl) => requestUrl.pathname === "/test",
       handler: () => new Response("I'm a static route"),
     },
     {
-      pattern: new URLPattern({ pathname: "/foo/:bar" }),
+      matcher: (requestUrl) => fooBarPattern.test(requestUrl),
       handlers: {
-        POST: (_request, match) => new Response(match.pathname.groups.bar),
+        POST: (request) => {
+          const match = fooBarPattern.exec(request.url);
+          return new Response(match?.pathname.groups.bar);
+        },
       },
     },
     {
-      pattern: new URLPattern({ pathname: "/throws" }),
+      matcher: (requestUrl) => requestUrl.pathname === "/throws",
       handler: () => {
         throw new HttpError(400, "Bad Request", {
           cause: { foo: "bar" },
@@ -65,7 +69,8 @@ Deno.test("route()", async (t) => {
 
   await t.step("routes static route with single handler", async () => {
     const request = new Request("http://localhost/test");
-    const response = route(routes, request);
+    const requestUrl = new URL(request.url);
+    const response = route(routes, requestUrl, request.method)(request);
     assertInstanceOf(response, Response);
     assertEquals(response.status, 200);
     assertEquals(await response.text(), "I'm a static route");
@@ -77,7 +82,8 @@ Deno.test("route()", async (t) => {
       const request = new Request("http://localhost/foo/123", {
         method: "POST",
       });
-      const response = route(routes, request);
+      const requestUrl = new URL(request.url);
+      const response = route(routes, requestUrl, request.method)(request);
       assertInstanceOf(response, Response);
       assertEquals(response.status, 200);
       assertEquals(await response.text(), "123");
@@ -88,8 +94,9 @@ Deno.test("route()", async (t) => {
     'throws HTTP 404 "Not Found" error if no route matches the request URL',
     () => {
       const request = new Request("http://localhost/nonexistent");
+      const requestUrl = new URL(request.url);
       const error = assertThrows(
-        () => route(routes, request),
+        () => route(routes, requestUrl, request.method)(request),
         HttpError,
         "Not Found",
       );
@@ -103,8 +110,9 @@ Deno.test("route()", async (t) => {
       const request = new Request("http://localhost/foo/123", {
         method: "GET",
       });
+      const requestUrl = new URL(request.url);
       const error = assertThrows(
-        () => route(routes, request),
+        () => route(routes, requestUrl, request.method)(request),
         HttpError,
         "Method Not Allowed",
       );
@@ -116,8 +124,9 @@ Deno.test("route()", async (t) => {
     "throws error thrown in handler",
     () => {
       const request = new Request("http://localhost/throws");
+      const requestUrl = new URL(request.url);
       const error = assertThrows(
-        () => route(routes, request),
+        () => route(routes, requestUrl, request.method)(request),
         HttpError,
         "Bad Request",
       );

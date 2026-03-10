@@ -7,14 +7,14 @@ const routes = [
   { method: "GET", path: "/user" },
   { method: "GET", path: "/user/comments" },
   { method: "GET", path: "/user/avatar" },
+  { method: "GET", path: "/very/deeply/nested/route/hello/there" },
+  { method: "GET", path: "/status" },
   { method: "GET", path: "/user/lookup/username/:username" },
   { method: "GET", path: "/user/lookup/email/:address" },
   { method: "GET", path: "/event/:id" },
   { method: "GET", path: "/event/:id/comments" },
   { method: "POST", path: "/event/:id/comment" },
   { method: "GET", path: "/map/:location/events" },
-  { method: "GET", path: "/status" },
-  { method: "GET", path: "/very/deeply/nested/route/hello/there" },
   { method: "GET", path: "/static/*" },
 ];
 
@@ -56,10 +56,16 @@ const benchmarks = [
   },
 ];
 
-const plainRoutes: Route[] = routes.map(({ method, path }) => ({
-  pattern: new URLPattern({ pathname: path }),
-  handlers: { [method]: noop },
-}));
+const plainRoutes: Route[] = routes.map(({ method, path }) => {
+  const pattern = new URLPattern({ pathname: path });
+
+  return {
+    matcher: path.includes(":")
+      ? (requestUrl) => pattern.test(requestUrl)
+      : (requestUrl) => requestUrl.pathname === path,
+    handlers: { [method]: noop },
+  };
+});
 
 const findMyWayRouter = findMyWay();
 for (const route of routes) {
@@ -71,15 +77,14 @@ for (const benchmark of benchmarks) {
   const request = new Request(`http://localhost${benchmark.path}`, {
     method: benchmark.method,
   });
-  const { pathname } = new URL(request.url);
+  const requestUrl = new URL(request.url);
 
   Deno.bench("@iuioiua/plain", { group: benchmark.name }, () => {
-    // @ts-ignore It's fine
-    route(plainRoutes, request);
+    route(plainRoutes, requestUrl, request.method);
   });
 
   Deno.bench("find-my-way", { group: benchmark.name }, () => {
     // @ts-ignore It's fine
-    findMyWayRouter.find(benchmark.method, pathname);
+    findMyWayRouter.find(benchmark.method, requestUrl.pathname);
   });
 }
