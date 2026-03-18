@@ -387,6 +387,22 @@ export function html(
   );
 }
 
+const encoder = new TextEncoder();
+
+function timingSafeEqual(
+  a: Uint8Array<ArrayBuffer>,
+  b: Uint8Array<ArrayBuffer>,
+): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a[i] ^ b[i];
+  }
+  return result === 0;
+}
+
 /**
  * Configuration parameters for {@linkcode assertBasicAuth}.
  */
@@ -493,13 +509,14 @@ export function assertBasicAuth(
       cause: error,
     });
   }
-  const colonIndex = credentials.indexOf(":");
-  if (colonIndex === -1) {
+  if (!credentials.includes(":")) {
     throw new HttpError(400, "Malformed `Authorization` header");
   }
-  const username = credentials.slice(0, colonIndex);
-  const password = credentials.slice(colonIndex + 1);
-  if (username !== config.username || password !== config.password) {
+  const credentialsBytes = encoder.encode(credentials);
+  const expectedCredentialsBytes = encoder.encode(
+    `${config.username}:${config.password}`,
+  );
+  if (!timingSafeEqual(credentialsBytes, expectedCredentialsBytes)) {
     throw new HttpError(
       401,
       "Incorrect credentials",
