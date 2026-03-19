@@ -390,15 +390,16 @@ export function html(
 const encoder = new TextEncoder();
 
 function timingSafeEqual(
-  a: Uint8Array<ArrayBuffer>,
-  b: Uint8Array<ArrayBuffer>,
+  a: Uint8Array,
+  b: Uint8Array,
 ): boolean {
-  if (a.length !== b.length) {
-    return false;
-  }
-  let result = 0;
-  for (let i = 0; i < a.length; i++) {
-    result |= a[i] ^ b[i];
+  // Start with the XOR of the lengths so length differences affect the result
+  let result = a.length ^ b.length;
+  const len = Math.max(a.length, b.length);
+  for (let i = 0; i < len; i++) {
+    const va = i < a.length ? a[i] : 0;
+    const vb = i < b.length ? b[i] : 0;
+    result |= va ^ vb;
   }
   return result === 0;
 }
