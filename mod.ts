@@ -600,34 +600,48 @@ export function assertBearerAuth(
   authHeader: string | null,
   config: AssertBearerAuthConfig,
 ): asserts authHeader is string {
-  const UNAUTHORIZED_ERROR_OPTIONS = {
-    init: {
-      headers: {
-        "WWW-Authenticate": `Bearer realm="${config.realm}"`,
-      },
-    },
-  };
-
   if (!authHeader) {
     throw new HttpError(
-      401,
+      400,
       "Missing `Authorization` header",
-      UNAUTHORIZED_ERROR_OPTIONS,
+      {
+        init: {
+          headers: {
+            "WWW-Authenticate":
+              `Bearer realm="${config.realm}", error="invalid_request"`,
+          },
+        },
+      },
     );
   }
 
   const [scheme, token] = authHeader.split(/\s+/, 2);
   if (scheme.toLowerCase() !== "bearer" || !token) {
     throw new HttpError(
-      400,
+      401,
       "Malformed `Authorization` header",
+      {
+        init: {
+          headers: {
+            "WWW-Authenticate":
+              `Bearer realm="${config.realm}", error="invalid_token"`,
+          },
+        },
+      },
     );
   }
 
   const tokenBytes = encoder.encode(token);
   const expectedTokenBytes = encoder.encode(config.expectedToken);
   if (!timingSafeEqual(tokenBytes, expectedTokenBytes)) {
-    throw new HttpError(401, "Incorrect token", UNAUTHORIZED_ERROR_OPTIONS);
+    throw new HttpError(401, "Incorrect token", {
+      init: {
+        headers: {
+          "WWW-Authenticate":
+            `Bearer realm="${config.realm}", error="invalid_token"`,
+        },
+      },
+    });
   }
 }
 
