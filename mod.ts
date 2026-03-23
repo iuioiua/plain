@@ -531,6 +531,107 @@ export function assertBasicAuth(
 }
 
 /**
+ * Configuration parameters for {@linkcode assertBearerAuth}.
+ */
+export interface AssertBearerAuthConfig {
+  /**
+   * Authentication parameter corresponding to the
+   * {@linkcode https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/WWW-Authenticate | realm}
+   * directive in the
+   * {@linkcode https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/WWW-Authenticate | WWW-Authenticate}
+   * header.
+   */
+  realm: string;
+  /**
+   * The expected token for bearer authentication. This will be compared against
+   * the token extracted from the `Authorization` header of the incoming
+   * request.
+   */
+  expectedToken: string;
+}
+
+/**
+ * Asserts that the provided
+ * {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Authorization | `Authorization` header}
+ * contains valid
+ * {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Authentication#bearer | Bearer Authentication}
+ * credentials.
+ *
+ * @throws {HttpError} Throws a
+ * {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/401 | HTTP 401}
+ * error if the `Authorization` header is missing or contains an incorrect
+ * token, or a
+ * {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/400 | HTTP 400}
+ * error if the header is malformed.
+ *
+ * @param authHeader - The value of the `Authorization` header from the incoming
+ * request
+ * @param config - Configuration options including the expected realm and token
+ *
+ * @example Usage
+ * ```ts
+ * import { assertBearerAuth, HttpError, type Route } from "@iuioiua/plain";
+ *
+ * function GET(request: Request): Response {
+ *   try {
+ *     assertBearerAuth(request.headers.get("Authorization"), {
+ *       realm: "Admin tools",
+ *       expectedToken: "secret-token",
+ *     });
+ *     return new Response("Welcome!");
+ *   } catch (error) {
+ *     if (error instanceof HttpError) {
+ *       return new Response(error.message, {
+ *         status: error.status,
+ *         ...error.init
+ *       });
+ *     }
+ *     return new Response("Internal Server Error", { status: 500 });
+ *   }
+ * }
+ *
+ * export const protectedRoute = {
+ *   pattern: new URLPattern({ pathname: "/admin" }),
+ *   handlers: { GET },
+ * } satisfies Route;
+ * ```
+ */
+export function assertBearerAuth(
+  authHeader: string | null,
+  config: AssertBearerAuthConfig,
+): asserts authHeader is string {
+  const UNAUTHORIZED_ERROR_OPTIONS = {
+    init: {
+      headers: {
+        "WWW-Authenticate": `Bearer realm="${config.realm}"`,
+      },
+    },
+  };
+
+  if (!authHeader) {
+    throw new HttpError(
+      401,
+      "Missing `Authorization` header",
+      UNAUTHORIZED_ERROR_OPTIONS,
+    );
+  }
+
+  const [scheme, token] = authHeader.split(/\s+/, 2);
+  if (scheme.toLowerCase() !== "bearer" || !token) {
+    throw new HttpError(
+      400,
+      "Malformed `Authorization` header",
+    );
+  }
+
+  const tokenBytes = encoder.encode(token);
+  const expectedTokenBytes = encoder.encode(config.expectedToken);
+  if (!timingSafeEqual(tokenBytes, expectedTokenBytes)) {
+    throw new HttpError(401, "Incorrect token", UNAUTHORIZED_ERROR_OPTIONS);
+  }
+}
+
+/**
  * Creates a {@linkcode Response} that redirects the client to a different URL
  * orrelative path.
  *
