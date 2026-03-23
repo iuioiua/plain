@@ -275,6 +275,18 @@ Deno.test("assertBasicAuth()", async (t) => {
       password: "pass:word",
     });
   });
+
+  await t.step("doesn't throw with non-ASCII UTF-8 credentials", () => {
+    const username = "ñoño";
+    const password = "pässwörd";
+    const bytes = new TextEncoder().encode(`${username}:${password}`);
+    const encoded = btoa(String.fromCharCode(...bytes));
+    assertBasicAuth(`Basic ${encoded}`, {
+      realm: "Admin tools",
+      username,
+      password,
+    });
+  });
 });
 
 Deno.test("redirect()", () => {
