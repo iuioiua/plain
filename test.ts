@@ -262,6 +262,19 @@ Deno.test("assertBasicAuth()", async (t) => {
       password: "pass:word",
     });
   });
+
+  await t.step("doesn't throw due to scheme case sensitivity", () => {
+    assertBasicAuth(`BASIC ${btoa("admin:pass:word")}`, {
+      realm: "Admin tools",
+      username: "admin",
+      password: "pass:word",
+    });
+    assertBasicAuth(`basic ${btoa("admin:pass:word")}`, {
+      realm: "Admin tools",
+      username: "admin",
+      password: "pass:word",
+    });
+  });
 });
 
 Deno.test("redirect()", () => {

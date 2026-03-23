@@ -497,7 +497,7 @@ export function assertBasicAuth(
   }
 
   const [scheme, encodedCredentials] = authHeader.split(" ");
-  if (scheme !== "Basic" || !encodedCredentials) {
+  if (scheme.toLowerCase() !== "basic" || !encodedCredentials) {
     throw new HttpError(400, "Malformed `Authorization` header");
   }
 
