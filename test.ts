@@ -339,11 +339,7 @@ Deno.test("assertBearerAuth()", async (t) => {
       "Malformed `Authorization` header",
     );
     assertEquals(error.status, 400);
-    assertEquals(
-      // @ts-ignore It's fine
-      error.init?.headers?.["WWW-Authenticate"],
-      'Bearer realm="Protected"',
-    );
+    assertEquals(error.init?.headers, undefined);
   });
 
   await t.step("throws with incorrect token", () => {

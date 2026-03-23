@@ -621,11 +621,12 @@ export function assertBearerAuth(
     throw new HttpError(
       400,
       "Malformed `Authorization` header",
-      UNAUTHORIZED_ERROR_OPTIONS,
     );
   }
 
-  if (token !== config.expectedToken) {
+  const tokenBytes = encoder.encode(token);
+  const expectedTokenBytes = encoder.encode(config.expectedToken);
+  if (!timingSafeEqual(tokenBytes, expectedTokenBytes)) {
     throw new HttpError(401, "Incorrect token", UNAUTHORIZED_ERROR_OPTIONS);
   }
 }
