@@ -483,7 +483,7 @@ export interface AssertBasicAuthConfig {
 export function assertBasicAuth(
   authHeader: string | null,
   config: AssertBasicAuthConfig,
-) {
+): asserts authHeader is string {
   const UNAUTHORIZED_ERROR_OPTIONS = {
     init: {
       headers: {
