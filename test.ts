@@ -191,8 +191,7 @@ Deno.test("assertBasicAuth()", async (t) => {
       "Malformed `Authorization` header",
     );
     assertEquals(error.status, 400);
-    assertIsError(error.cause, DOMException);
-    assertEquals(error.cause.name, "InvalidCharacterError");
+    assertIsError(error.cause, SyntaxError);
   });
 
   await t.step("throws with no username/password colon separator", () => {

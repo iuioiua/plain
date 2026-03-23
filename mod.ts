@@ -504,10 +504,9 @@ export function assertBasicAuth(
   let credentials: string;
   try {
     // Decode base64 to raw bytes, then interpret as UTF-8 per RFC 7617 §2.
-    // See https://developer.mozilla.org/en-US/docs/Web/API/Window/atob#exceptions
-    const binaryString = atob(encodedCredentials);
-    const bytes = Uint8Array.from(binaryString, (c) => c.charCodeAt(0));
-    credentials = new TextDecoder().decode(bytes);
+    credentials = new TextDecoder().decode(
+      Uint8Array.fromBase64(encodedCredentials),
+    );
   } catch (error) {
     throw new HttpError(400, "Malformed `Authorization` header", {
       cause: error,
