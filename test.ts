@@ -320,7 +320,7 @@ Deno.test("assertBearerAuth()", async (t) => {
       HttpError,
       "Missing `Authorization` header",
     );
-    assertEquals(error.status, 400);
+    assertEquals(error.status, 401);
     assertEquals(
       // @ts-ignore It's fine
       error.init?.headers?.["WWW-Authenticate"],
@@ -338,11 +338,11 @@ Deno.test("assertBearerAuth()", async (t) => {
       HttpError,
       "Malformed `Authorization` header",
     );
-    assertEquals(error.status, 401);
+    assertEquals(error.status, 400);
     assertEquals(
       // @ts-ignore It's fine
       error.init?.headers?.["WWW-Authenticate"],
-      `Bearer realm="Protected", error="invalid_token"`,
+      `Bearer realm="Protected", error="invalid_request"`,
     );
   });
 
