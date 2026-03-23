@@ -342,6 +342,23 @@ Deno.test("assertBearerAuth()", async (t) => {
     assertEquals(error.init?.headers, undefined);
   });
 
+  await t.step(
+    "throws with trailing content in `Authorization` header",
+    () => {
+      const error = assertThrows(
+        () =>
+          assertBearerAuth("Bearer secret-token extra", {
+            realm: "Protected",
+            expectedToken: "secret-token",
+          }),
+        HttpError,
+        "Malformed `Authorization` header",
+      );
+      assertEquals(error.status, 400);
+      assertEquals(error.init?.headers, undefined);
+    },
+  );
+
   await t.step("throws with incorrect token", () => {
     const error = assertThrows(
       () =>

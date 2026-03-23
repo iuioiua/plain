@@ -616,15 +616,15 @@ export function assertBearerAuth(
     );
   }
 
-  const [scheme, token] = authHeader.split(/\s+/, 2);
-  if (scheme.toLowerCase() !== "bearer" || !token) {
+  const match = authHeader.match(/^(\S+)\s+(\S+)$/);
+  if (!match || match[1].toLowerCase() !== "bearer") {
     throw new HttpError(
       400,
       "Malformed `Authorization` header",
     );
   }
 
-  const tokenBytes = encoder.encode(token);
+  const tokenBytes = encoder.encode(match[2]);
   const expectedTokenBytes = encoder.encode(config.expectedToken);
   if (!timingSafeEqual(tokenBytes, expectedTokenBytes)) {
     throw new HttpError(401, "Incorrect token", UNAUTHORIZED_ERROR_OPTIONS);
