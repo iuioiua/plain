@@ -602,7 +602,7 @@ export function assertBearerAuth(
 ): asserts authHeader is string {
   if (!authHeader) {
     throw new HttpError(
-      400,
+      401,
       "Missing `Authorization` header",
       {
         init: {
@@ -618,13 +618,13 @@ export function assertBearerAuth(
   const [scheme, token] = authHeader.split(/\s+/, 2);
   if (scheme.toLowerCase() !== "bearer" || !token) {
     throw new HttpError(
-      401,
+      400,
       "Malformed `Authorization` header",
       {
         init: {
           headers: {
             "WWW-Authenticate":
-              `Bearer realm="${config.realm}", error="invalid_token"`,
+              `Bearer realm="${config.realm}", error="invalid_request"`,
           },
         },
       },
