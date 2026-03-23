@@ -435,6 +435,9 @@ export interface AssertBasicAuthConfig {
  * {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Authentication#basic_authentication_scheme | Basic Authentication}
  * credentials.
  *
+ * Note: this function does not support the `charset` parameter in the
+ * `Authorization` header.
+ *
  * @throws {HttpError} Throws a
  * {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/401 | HTTP 401}
  * error if the `Authorization` header is missing or contains incorrect
