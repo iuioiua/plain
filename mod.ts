@@ -151,7 +151,7 @@ export class HttpError extends Error {
   /**
    * Configuration options for the HTTP response associated with this error.
    */
-  init?: ResponseInit;
+  init: ResponseInit;
 
   /**
    * Constructs a new {@link HttpError} instance.
@@ -240,7 +240,7 @@ export class HttpError extends Error {
     super(message, options);
     this.name = this.constructor.name;
     this.status = status;
-    this.init = options?.init;
+    this.init = { status, statusText: message, ...options?.init };
   }
 }
 

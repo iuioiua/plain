@@ -19,7 +19,10 @@ Deno.test("HttpError", async (t) => {
     assertEquals(error.status, 500);
     assertEquals(error.message, "Internal Server Error");
     assertEquals(error.cause, undefined);
-    assertEquals(error.init, undefined);
+    assertEquals(error.init, {
+      status: 500,
+      statusText: "Internal Server Error",
+    });
   });
 
   await t.step("initialises with custom properties", () => {
