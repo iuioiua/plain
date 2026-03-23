@@ -387,6 +387,23 @@ export function html(
   );
 }
 
+const encoder = new TextEncoder();
+
+function timingSafeEqual(
+  a: Uint8Array,
+  b: Uint8Array,
+): boolean {
+  // Start with the XOR of the lengths so length differences affect the result
+  let result = a.length ^ b.length;
+  const len = Math.max(a.length, b.length);
+  for (let i = 0; i < len; i++) {
+    const va = i < a.length ? a[i] : 0;
+    const vb = i < b.length ? b[i] : 0;
+    result |= va ^ vb;
+  }
+  return result === 0;
+}
+
 /**
  * Configuration parameters for {@linkcode assertBasicAuth}.
  */
@@ -493,13 +510,14 @@ export function assertBasicAuth(
       cause: error,
     });
   }
-  const colonIndex = credentials.indexOf(":");
-  if (colonIndex === -1) {
+  if (!credentials.includes(":")) {
     throw new HttpError(400, "Malformed `Authorization` header");
   }
-  const username = credentials.slice(0, colonIndex);
-  const password = credentials.slice(colonIndex + 1);
-  if (username !== config.username || password !== config.password) {
+  const credentialsBytes = encoder.encode(credentials);
+  const expectedCredentialsBytes = encoder.encode(
+    `${config.username}:${config.password}`,
+  );
+  if (!timingSafeEqual(credentialsBytes, expectedCredentialsBytes)) {
     throw new HttpError(
       401,
       "Incorrect credentials",
