@@ -1,15 +1,18 @@
 import {
   assertBasicAuth,
+  assertBearerAuth,
   html,
   HttpError,
   redirect,
   type Route,
   route,
 } from "./mod.ts";
-import { assertEquals } from "@std/assert/equals";
-import { assertInstanceOf } from "@std/assert/instance-of";
-import { assertThrows } from "@std/assert/throws";
-import { assertIsError } from "@std/assert/is-error";
+import {
+  assertEquals,
+  assertInstanceOf,
+  assertIsError,
+  assertThrows,
+} from "@std/assert";
 
 Deno.test("HttpError", async (t) => {
   await t.step("initialises with correct defaults", () => {
@@ -304,6 +307,90 @@ Deno.test("assertBasicAuth()", async (t) => {
       password: "pässwörd",
     });
   });
+});
+
+Deno.test("assertBearerAuth()", async (t) => {
+  await t.step("throws with missing `Authorization` header", () => {
+    const error = assertThrows(
+      () =>
+        assertBearerAuth(null, {
+          realm: "Protected",
+          expectedToken: "secret-token",
+        }),
+      HttpError,
+      "Missing `Authorization` header",
+    );
+    assertEquals(error.status, 401);
+    assertEquals(
+      // @ts-ignore It's fine
+      error.init?.headers?.["WWW-Authenticate"],
+      'Bearer realm="Protected"',
+    );
+  });
+
+  await t.step("throws with malformed `Authorization` header", () => {
+    const error = assertThrows(
+      () =>
+        assertBearerAuth("malformed", {
+          realm: "Protected",
+          expectedToken: "secret-token",
+        }),
+      HttpError,
+      "Malformed `Authorization` header",
+    );
+    assertEquals(error.status, 400);
+    assertEquals(
+      // @ts-ignore It's fine
+      error.init?.headers?.["WWW-Authenticate"],
+      'Bearer realm="Protected"',
+    );
+  });
+
+  await t.step("throws with incorrect token", () => {
+    const error = assertThrows(
+      () =>
+        assertBearerAuth("Bearer wrong-token", {
+          realm: "Admin tools",
+          expectedToken: "secret-token",
+        }),
+      HttpError,
+      "Incorrect token",
+    );
+    assertEquals(error.status, 401);
+    assertEquals(
+      // @ts-ignore It's fine
+      error.init?.headers?.["WWW-Authenticate"],
+      `Bearer realm="Admin tools"`,
+    );
+  });
+
+  await t.step("doesn't throw with correct token", () => {
+    assertBearerAuth("Bearer secret-token", {
+      realm: "Admin tools",
+      expectedToken: "secret-token",
+    });
+  });
+
+  await t.step("doesn't throw due to scheme case sensitivity", () => {
+    assertBearerAuth("BEARER secret-token", {
+      realm: "Admin tools",
+      expectedToken: "secret-token",
+    });
+    assertBearerAuth("bearer secret-token", {
+      realm: "Admin tools",
+      expectedToken: "secret-token",
+    });
+  });
+
+  await t.step(
+    "doesn't throw with multiple spaces between scheme and token",
+    () => {
+      assertBearerAuth("Bearer  secret-token", {
+        realm: "Admin tools",
+        expectedToken: "secret-token",
+      });
+    },
+  );
 });
 
 Deno.test("redirect()", () => {
