@@ -388,6 +388,7 @@ export function html(
 }
 
 const encoder = new TextEncoder();
+const decoder = new TextDecoder();
 
 function timingSafeEqual(
   a: Uint8Array,
@@ -506,8 +507,8 @@ export function assertBasicAuth(
 
   let credentials: string;
   try {
-    // See https://developer.mozilla.org/en-US/docs/Web/API/Window/atob#exceptions
-    credentials = atob(encodedCredentials);
+    const rawCredentials = Uint8Array.fromBase64(encodedCredentials);
+    credentials = decoder.decode(rawCredentials);
   } catch (error) {
     throw new HttpError(400, "Malformed `Authorization` header", {
       cause: error,

@@ -145,6 +145,13 @@ Deno.test("html()", () => {
   );
 });
 
+const encoder = new TextEncoder();
+
+function toBase64(str: string): string {
+  const bytes = encoder.encode(str);
+  return btoa(String.fromCharCode(...bytes));
+}
+
 Deno.test("assertBasicAuth()", async (t) => {
   await t.step("throws with missing `Authorization` header", () => {
     const error = assertThrows(
@@ -191,14 +198,17 @@ Deno.test("assertBasicAuth()", async (t) => {
       "Malformed `Authorization` header",
     );
     assertEquals(error.status, 400);
-    assertIsError(error.cause, DOMException);
-    assertEquals(error.cause.name, "InvalidCharacterError");
+    assertIsError(
+      error.cause,
+      SyntaxError,
+      "Found a character that cannot be part of a valid base64 string.",
+    );
   });
 
   await t.step("throws with no username/password colon separator", () => {
     const error = assertThrows(
       () =>
-        assertBasicAuth(`Basic ${btoa("adminpassword")}`, {
+        assertBasicAuth(`Basic ${toBase64("adminpassword")}`, {
           realm: "Protected",
           username: "admin",
           password: "password",
@@ -212,7 +222,7 @@ Deno.test("assertBasicAuth()", async (t) => {
   await t.step("throws with incorrect username", () => {
     const error = assertThrows(
       () =>
-        assertBasicAuth(`Basic ${btoa("wrong-username:password")}`, {
+        assertBasicAuth(`Basic ${toBase64("wrong-username:password")}`, {
           realm: "Admin tools",
           username: "admin",
           password: "password",
@@ -231,7 +241,7 @@ Deno.test("assertBasicAuth()", async (t) => {
   await t.step("throws with incorrect password", () => {
     const error = assertThrows(
       () =>
-        assertBasicAuth(`Basic ${btoa("admin:wrong-password")}`, {
+        assertBasicAuth(`Basic ${toBase64("admin:wrong-password")}`, {
           realm: "Admin tools",
           username: "admin",
           password: "password",
@@ -248,7 +258,7 @@ Deno.test("assertBasicAuth()", async (t) => {
   });
 
   await t.step("doesn't throw with correct request", () => {
-    assertBasicAuth(`Basic ${btoa("admin:password")}`, {
+    assertBasicAuth(`Basic ${toBase64("admin:password")}`, {
       realm: "Admin tools",
       username: "admin",
       password: "password",
@@ -256,7 +266,7 @@ Deno.test("assertBasicAuth()", async (t) => {
   });
 
   await t.step("doesn't throw with colon in password", () => {
-    assertBasicAuth(`Basic ${btoa("admin:pass:word")}`, {
+    assertBasicAuth(`Basic ${toBase64("admin:pass:word")}`, {
       realm: "Admin tools",
       username: "admin",
       password: "pass:word",
@@ -264,15 +274,23 @@ Deno.test("assertBasicAuth()", async (t) => {
   });
 
   await t.step("doesn't throw due to scheme case sensitivity", () => {
-    assertBasicAuth(`BASIC ${btoa("admin:pass:word")}`, {
+    assertBasicAuth(`BASIC ${toBase64("admin:pass:word")}`, {
       realm: "Admin tools",
       username: "admin",
       password: "pass:word",
     });
-    assertBasicAuth(`basic ${btoa("admin:pass:word")}`, {
+    assertBasicAuth(`basic ${toBase64("admin:pass:word")}`, {
       realm: "Admin tools",
       username: "admin",
       password: "pass:word",
+    });
+  });
+
+  await t.step("doesn't throw with non-ASCII characters in credentials", () => {
+    assertBasicAuth(`Basic ${toBase64("usérnäme:pässwörd")}`, {
+      realm: "Admin tools",
+      username: "usérnäme",
+      password: "pässwörd",
     });
   });
 });
