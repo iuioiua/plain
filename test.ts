@@ -286,6 +286,14 @@ Deno.test("assertBasicAuth()", async (t) => {
     });
   });
 
+  await t.step("doesn't throw with multiple spaces between scheme and credentials", () => {
+    assertBasicAuth(`Basic  ${toBase64("admin:password")}`, {
+      realm: "Admin tools",
+      username: "admin",
+      password: "password",
+    });
+  });
+
   await t.step("doesn't throw with non-ASCII characters in credentials", () => {
     assertBasicAuth(`Basic ${toBase64("usérnäme:pässwörd")}`, {
       realm: "Admin tools",
